@@ -8,6 +8,7 @@ import node.ledger.Ledger;
 import node.ledger.LedgerDispatcher;
 import node.ledger.LedgerMonitor;
 import node.netty.NettyGossipNode;
+import node.netty.NettyPools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -41,7 +42,7 @@ public class NettyGossipNodeTest {
     List<Cancelable> cancellables;
 
     int port;
-    NettyGossipNode.Pools pools;
+    NettyPools pools;
     ScheduledExecutorService scheduledExecutor;
     private Map<Gossip, Integer> rndId = new HashMap<>();
     private DefaultThreadFactory ledgerThreadFactory;
@@ -71,7 +72,7 @@ public class NettyGossipNodeTest {
         localhost = getByName("localhost");
         md5 = MessageDigest.getInstance("md5");
 
-        pools = new NettyGossipNode.Pools();
+        pools = new NettyPools();
         cancellables.add(pools);
 
         ledgerThreadFactory = new DefaultThreadFactory("ledger");

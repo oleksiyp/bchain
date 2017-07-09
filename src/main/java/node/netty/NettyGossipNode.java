@@ -4,12 +4,9 @@ import com.esotericsoftware.kryo.Kryo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolver;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.concurrent.DefaultThreadFactory;
 import kryo.KryoDecoder;
 import kryo.KryoEncoder;
 import kryo.KryoObjectPool;
@@ -36,8 +33,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.netty.handler.codec.serialization.ClassResolvers.softCachingConcurrentResolver;
-
 public class NettyGossipNode implements Gossip, LedgerListener, Cancelable {
     private static final Logger log = LogManager.getLogger(NettyGossipNode.class);
 
@@ -56,7 +51,7 @@ public class NettyGossipNode implements Gossip, LedgerListener, Cancelable {
     private final Ledger ledger;
     private KryoObjectPool pool;
 
-    public NettyGossipNode(Pools pools,
+    public NettyGossipNode(NettyPools pools,
                            InetAddress publicAddress,
                            InetAddress listenAddress,
                            Supplier<Integer> portSeq,
@@ -312,26 +307,6 @@ public class NettyGossipNode implements Gossip, LedgerListener, Cancelable {
             Thread.currentThread().interrupt();
         }
         return channelFuture;
-    }
-
-    public static class Pools implements Cancelable {
-        EventLoopGroup bossGroup;
-        EventLoopGroup workerGroup;
-        EventLoopGroup clientGroup;
-        ClassResolver classResolver;
-
-        public Pools() {
-            bossGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("server"));
-            workerGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("worker"));
-            clientGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("client"));
-            classResolver = softCachingConcurrentResolver(this.getClass().getClassLoader());
-        }
-
-        public void cancel() {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
-            clientGroup.shutdownGracefully();
-        }
     }
 
     private class ExceptionHandler extends ChannelDuplexHandler {
