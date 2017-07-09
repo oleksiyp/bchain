@@ -6,7 +6,8 @@ public class IntroduceMessage extends Message {
     private final long hash;
     private final long mask;
 
-    IntroduceMessage() {
+    public IntroduceMessage() {
+        super();
         hash = mask = 0;
     }
 

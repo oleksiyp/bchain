@@ -1,4 +1,4 @@
-package node;
+package node.netty;
 
 import com.esotericsoftware.kryo.Kryo;
 import io.netty.bootstrap.Bootstrap;
@@ -12,25 +12,34 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import kryo.KryoDecoder;
 import kryo.KryoEncoder;
+import kryo.KryoObjectPool;
+import node.Gossip;
+import node.Headers;
+import node.Message;
+import node.ledger.Ledger;
+import node.ledger.LedgerListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import util.Cancelable;
+import util.Pool;
 import util.VolatileCollection;
+import util.VolatileMap;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.serialization.ClassResolvers.softCachingConcurrentResolver;
 
-public class GossipNode implements Gossip, LedgerListener, Cancelable {
-    private static final Logger log = LogManager.getLogger(GossipNode.class);
+public class NettyGossipNode implements Gossip, LedgerListener, Cancelable {
+    private static final Logger log = LogManager.getLogger(NettyGossipNode.class);
 
     private final InetAddress addr;
     private final InetAddress listenAddress;
@@ -40,20 +49,23 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
     private final Bootstrap client;
 
     private final VolatileCollection<Consumer<Message>> listeners;
-    private final VolatileCollection<Channel> channels;
+    private final VolatileMap<String, Channel> channels;
     private final VolatileCollection<Consumer<InetSocketAddress>> joinedListeners;
     private final VolatileCollection<Consumer<InetSocketAddress>> resignedListeners;
 
     private final Ledger ledger;
+    private KryoObjectPool pool;
 
-    public GossipNode(Pools pools,
-                      InetAddress publicAddress,
-                      InetAddress listenAddress,
-                      Supplier<Integer> portSeq,
-                      Ledger ledger,
-                      Consumer<Kryo> kryoConfigurer) {
+    public NettyGossipNode(Pools pools,
+                           InetAddress publicAddress,
+                           InetAddress listenAddress,
+                           Supplier<Integer> portSeq,
+                           Ledger ledger,
+                           Consumer<Kryo> kryoConfigurer,
+                           KryoObjectPool pool) {
+        this.pool = pool;
 
-        ledger.setListener(this);
+        ledger.setLedgerListener(this);
         this.addr = publicAddress;
         this.listenAddress = listenAddress;
         this.ledger = ledger;
@@ -69,8 +81,8 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
                         ch.pipeline()
                                 .addLast(new ChannelListMaintainer())
                                 .addLast(new LoggingHandler())
-                                .addLast(new KryoEncoder(kryoConfigurer))
-                                .addLast(new KryoDecoder(kryoConfigurer))
+                                .addLast(new KryoEncoder(kryoConfigurer, pool))
+                                .addLast(new KryoDecoder(kryoConfigurer, pool))
 //                                .addLast(new LoggingHandler(LogLevel.ERROR))
                                 .addLast(new LedgerHandler())
                                 .addLast(new ExceptionHandler());
@@ -88,8 +100,8 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
                         ch.pipeline()
                                 .addLast(new ChannelListMaintainer())
                                 .addLast(new LoggingHandler())
-                                .addLast(new KryoEncoder(kryoConfigurer))
-                                .addLast(new KryoDecoder(kryoConfigurer))
+                                .addLast(new KryoEncoder(kryoConfigurer, pool))
+                                .addLast(new KryoDecoder(kryoConfigurer, pool))
 //                                .addLast(new LoggingHandler(LogLevel.ERROR))
                                 .addLast(new LedgerHandler())
                                 .addLast(new ExceptionHandler());
@@ -99,7 +111,7 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
         port = bindPort(portSeq);
 
         listeners = new VolatileCollection<>(ArrayList::new);
-        channels = new VolatileCollection<>(HashSet::new);
+        channels = new VolatileMap<>(HashMap::new);
         joinedListeners = new VolatileCollection<>(ArrayList::new);
         resignedListeners = new VolatileCollection<>(ArrayList::new);
     }
@@ -168,7 +180,7 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
         headers.setOriginator(address());
         headers.setSender(address());
 
-        ledger.sendMessage(message, null);
+        ledger.processMessage(message, null);
     }
 
     @Override
@@ -179,31 +191,33 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
     }
 
     @Override
-    public void sendChannel(ChannelId id, Message message) {
+    public void sendChannel(String id, Message message) {
         message.getHeaders().setSender(address());
 
-        for (Channel ch : channels) {
-            if (!ch.id().equals(id)) {
-                continue;
-            }
-            if (!ch.isActive()) {
-                continue;
-            }
-
-            ch.writeAndFlush(message);
-        }
+        sync(channels.get(id)
+                .writeAndFlush(message));
     }
 
     @Override
-    public void broadcastChannels(Message message, ChannelId recieveChannelId) {
+    public Pool getPool() {
+        return pool;
+    }
+
+    @Override
+    public void broadcastChannels(Message message, String recieveChannelId) {
         message.getHeaders().setSender(address());
 
-        for (Channel ch : channels) {
+        List<ChannelFuture> futures = new ArrayList<>(channels.size());
+        for (Channel ch : channels.values()) {
             if (recieveChannelId != null &&
-                    recieveChannelId.equals(ch.id())) {
+                    recieveChannelId.equals(ch.id().asLongText())) {
                 continue;
             }
-            ch.writeAndFlush(message);
+            futures.add(ch.writeAndFlush(message));
+        }
+
+        for (ChannelFuture future : futures) {
+            sync(future);
         }
     }
 
@@ -221,7 +235,7 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
             throw new RuntimeException("no route back target in message: " + message);
         }
 
-        sendRouteBackViaLedger(message);
+        send(message);
     }
 
     @Override
@@ -244,10 +258,11 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
     public void cancel() {
         listeners.clear();
 
-        channels.stream()
+        channels.values()
+                .stream()
                 .map(Channel::close)
                 .collect(Collectors.toList())
-                .forEach(GossipNode::sync);
+                .forEach(NettyGossipNode::sync);
 
         channels.clear();
     }
@@ -256,15 +271,17 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
     private class ChannelListMaintainer extends ChannelDuplexHandler {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            channels.add(ctx.channel());
-            notifyMembershipChange(joinedListeners, ctx.channel().remoteAddress());
+            Channel channel = ctx.channel();
+            channels.put(channel.id().asLongText(), channel);
+            notifyMembershipChange(joinedListeners, channel.remoteAddress());
             super.channelActive(ctx);
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            channels.remove(ctx.channel());
-            notifyMembershipChange(resignedListeners, ctx.channel().remoteAddress());
+            Channel channel = ctx.channel();
+            channels.remove(channel.id().asLongText());
+            notifyMembershipChange(resignedListeners, channel.remoteAddress());
             super.channelInactive(ctx);
         }
 
@@ -284,17 +301,8 @@ public class GossipNode implements Gossip, LedgerListener, Cancelable {
         protected void channelRead0(ChannelHandlerContext ctx,
                                     Message message) throws Exception {
 
-            if (message.getHeaders().isRouteBack()) {
-                sendRouteBackViaLedger(message);
-                return;
-            }
-
-            ledger.sendMessage(message, ctx.channel().id());
+            ledger.processMessage(message, ctx.channel().id());
         }
-    }
-
-    private void sendRouteBackViaLedger(Message message) {
-        ledger.sendViaBackRoute(message);
     }
 
     private static ChannelFuture sync(ChannelFuture channelFuture) {

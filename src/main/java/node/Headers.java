@@ -1,5 +1,8 @@
 package node;
 
+import kryo.Poolable;
+import util.Pool;
+
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -10,7 +13,7 @@ import java.util.stream.Collectors;
 
 import static node.Headers.HeaderName.register;
 
-public class Headers implements Serializable {
+public class Headers implements Serializable, Poolable {
     public static final HeaderName<Long> ID = register(1, "ID", Long.class);
     public static final HeaderName<Long> TIMESTAMP = register(2, "TIMESTAMP", Long.class);
     public static final HeaderName<InetSocketAddress> ORIGINATOR = register(3, "ORIGINATOR", InetSocketAddress.class);
@@ -108,6 +111,19 @@ public class Headers implements Serializable {
             return false;
         }
         return true;
+    }
+
+
+    @Override
+    public void dispose(Pool pool) {
+        id = 0;
+        timestamp = 0;
+        originator = null;
+        sender = null;
+        map.clear();
+        pool.returnToPool(map);
+        map = null;
+        pool.returnToPool(this);
     }
 
     public static class HeaderName<T> implements Serializable {

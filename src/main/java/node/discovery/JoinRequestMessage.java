@@ -7,11 +7,13 @@ import java.net.InetSocketAddress;
 public class JoinRequestMessage extends Message {
     private final InetSocketAddress address;
 
-    JoinRequestMessage() {
+    public JoinRequestMessage() {
+        super();
         address = null;
     }
 
     public JoinRequestMessage(InetSocketAddress address) {
+        super();
         this.address = address;
     }
 
