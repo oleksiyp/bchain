@@ -296,7 +296,7 @@ public class NettyGossipNode implements Gossip, LedgerListener, Cancelable {
         protected void channelRead0(ChannelHandlerContext ctx,
                                     Message message) throws Exception {
 
-            ledger.processMessage(message, ctx.channel().id());
+            ledger.processMessage(message, ctx.channel().id().asLongText());
         }
     }
 

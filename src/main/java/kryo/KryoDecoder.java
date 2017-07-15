@@ -16,7 +16,7 @@ public class KryoDecoder extends ByteToMessageDecoder {
     Input input = new Input(4096);
 
     public KryoDecoder(Consumer<Kryo> factory, KryoObjectPool pool) {
-        kryo = KryoFactory.newKryo(factory, pool);
+        kryo = new KryoFactory(factory, pool).get();
     }
 
     @Override

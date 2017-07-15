@@ -4,12 +4,13 @@ import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import util.mutable.Mutable;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
-public class Dispatcher<T extends Copyable> {
+public class Dispatcher<T extends Mutable> {
     protected final Disruptor<T> disruptor;
     protected final ConcurrentLinkedQueue<T> queue;
     protected EventFactory<T> eventFactory;
@@ -54,7 +55,7 @@ public class Dispatcher<T extends Copyable> {
             }
 
             try {
-                fromQ.copyTo(ringBuffer.get(n));
+                fromQ.copyFrom(ringBuffer.get(n));
             } finally {
                 ringBuffer.publish(n);
                 queue.poll();

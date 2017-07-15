@@ -43,7 +43,7 @@ public class ReplayLedgerEvent {
     @Override
     public String toString() {
         return "ReplayLedgerEvent{" +
-                "active=" + active +
+                "activeChoice=" + active +
                 ", listener=" + listener +
                 ", latch=" + latch +
                 '}';

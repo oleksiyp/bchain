@@ -23,6 +23,14 @@ public class VolatileMap<K, V> {
         }
     }
 
+    public <R> R modifyWithRes(Function<Map<K, V>, R> handler) {
+        synchronized (passive) {
+            R res = handler.apply(passive);
+            active = constructor.apply(passive);
+            return res;
+        }
+    }
+
     public boolean isEmpty() {
         return active.isEmpty();
     }
@@ -57,6 +65,10 @@ public class VolatileMap<K, V> {
 
     public Collection<V> values() {
         return active.values();
+    }
+
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        return modifyWithRes(col -> col.computeIfAbsent(key, mappingFunction));
     }
 }
 

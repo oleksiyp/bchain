@@ -16,9 +16,19 @@ import java.util.LinkedHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class KryoFactory {
-    public static Kryo newKryo(Consumer<Kryo> kryoConsumer, final KryoObjectPool pool) {
+public class KryoFactory implements Supplier<Kryo> {
 
+    private final Consumer<Kryo> kryoConsumer;
+    private final KryoObjectPool pool;
+
+    public KryoFactory(Consumer<Kryo> kryoConsumer,
+                       final KryoObjectPool pool) {
+        this.kryoConsumer = kryoConsumer;
+        this.pool = pool;
+    }
+
+    @Override
+    public Kryo get() {
         Kryo kryo = new Kryo() {
             @Override
             public Registration register(Class type, int id) {
@@ -39,26 +49,26 @@ public class KryoFactory {
                 };
 
                 registration.setInstantiator(pool.newInstantiator(
-                                type,
-                                factory,
-                                128 * 1024));
+                        type,
+                        factory,
+                        128 * 1024));
                 return registration;
             }
         };
 
         MapSerializer serializer = new MapSerializer();
         kryo.register(HashMap.class, serializer, 10)
-            .setInstantiator(pool.newInstantiator(
-                HashMap.class, HashMap::new,
-                128 * 1024));
+                .setInstantiator(pool.newInstantiator(
+                        HashMap.class, HashMap::new,
+                        128 * 1024));
 
         kryo.register(LinkedHashMap.class, serializer, 11);
 
         kryo.register(Headers.class, 20)
-            .setInstantiator(pool.newInstantiator(
-                    Headers.class,
-                    Headers::new,
-                    128 * 1024));
+                .setInstantiator(pool.newInstantiator(
+                        Headers.class,
+                        Headers::new,
+                        128 * 1024));
 
         kryo.register(Headers.HeaderName.class, new HeaderNameSerializer(), 21);
         kryo.register(InetSocketAddress.class, new InetSocketAddressSerializer(), 22);
@@ -80,5 +90,4 @@ public class KryoFactory {
 
         return kryo;
     }
-
 }

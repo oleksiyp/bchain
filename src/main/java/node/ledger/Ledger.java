@@ -1,6 +1,5 @@
 package node.ledger;
 
-import io.netty.channel.ChannelId;
 import node.Message;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,9 +7,6 @@ import util.Cancelable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
-
-import static java.lang.Math.abs;
-import static java.util.Arrays.asList;
 
 public class Ledger implements Cancelable {
     public static final Logger LOGGER = LogManager.getLogger(Ledger.class);
@@ -34,7 +30,7 @@ public class Ledger implements Cancelable {
         this.ledgerListener = ledgerListener;
     }
 
-    public void processMessage(Message message, ChannelId receiveChannelId) {
+    public void processMessage(Message message, String receiveChannelId) {
         dispatcher.dispatch((event) ->
                 event.setLedgerListener(ledgerListener)
                         .setPartitions(partitions)

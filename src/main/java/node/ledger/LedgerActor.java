@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 public class LedgerActor {
     long id;
     Message message;
-    ChannelId receiveChannelId;
+    String receiveChannelId;
     LedgerListener ledgerListener;
     Headers headers;
 
@@ -25,28 +25,28 @@ public class LedgerActor {
             headers = message.getHeaders();
             receiveChannelId = event.getReceiveChannelId();
             ledgerListener.notifyListeners(message);
-            ledgerListener.broadcastChannels(message, receiveChannelId.asLongText());
+            ledgerListener.broadcastChannels(message, receiveChannelId);
         } else {
             if (receiveChannelId != null) {
-                ledgerListener.sendChannel(receiveChannelId.asLongText(), event.getMessage());
+                ledgerListener.sendChannel(receiveChannelId, event.getMessage());
             }
         }
 
         //        if (message instanceof RequestNodeCountMessage) {
-//            nodeCounter.put(message.getHeaders().getId(), 0);
-//            spanningCounters.put(message.getHeaders().getId(), 1);
+//            nodeCounter.on(message.getHeaders().getId(), 0);
+//            spanningCounters.on(message.getHeaders().getId(), 1);
 //        } else if (message instanceof AckRequestNodeCountMessage) {
 //            Long id = message.getHeaders().get(Headers.ROUTE_BACK_ID);
 //            if (id != null) {
-//                spanningCounters.put(id, spanningCounters.getOrDefault(id, 0) + 1);
+//                spanningCounters.on(id, spanningCounters.getOrDefault(id, 0) + 1);
 //            }
 //            return;
 //        } else if (message instanceof NodeCountMessage) {
 //            Long id = message.getHeaders().get(Headers.ROUTE_BACK_ID);
 //            if (id != null) {
 //                NodeCountMessage countMessage = (NodeCountMessage) message;
-//                nodeCounter.put(id, nodeCounter.get(id) + countMessage.getCount());
-//                spanningCounters.put(id, spanningCounters.getOrDefault(id, 0) - 1);
+//                nodeCounter.on(id, nodeCounter.get(id) + countMessage.getCount());
+//                spanningCounters.on(id, spanningCounters.getOrDefault(id, 0) - 1);
 //                if (spanningCounters.get(id) == 0) {
 //                    countMessage = new NodeCountMessage(nodeCounter.get(id));
 //                    countMessage.getHeaders().set(Headers.ROUTE_BACK_ID, id);

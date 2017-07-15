@@ -17,7 +17,7 @@ public class KryoEncoder extends MessageToByteEncoder<Message> {
     Output output = new Output(4096);
 
     public KryoEncoder(Consumer<Kryo> factory, KryoObjectPool pool) {
-        kryo = KryoFactory.newKryo(factory, pool);
+        kryo = new KryoFactory(factory, pool).get();
     }
 
     @Override

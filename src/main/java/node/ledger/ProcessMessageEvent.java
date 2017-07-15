@@ -6,9 +6,9 @@ import node.Message;
 public class ProcessMessageEvent {
     private boolean active;
     private Message message;
-    private ChannelId receiveChannelId;
+    private String receiveChannelId;
 
-    public void activate(Message message, ChannelId receiveChannelId) {
+    public void activate(Message message, String receiveChannelId) {
         this.active = true;
         this.message = message;
         this.receiveChannelId = receiveChannelId;
@@ -28,7 +28,7 @@ public class ProcessMessageEvent {
         return message;
     }
 
-    public ChannelId getReceiveChannelId() {
+    public String getReceiveChannelId() {
         return receiveChannelId;
     }
 
@@ -41,7 +41,7 @@ public class ProcessMessageEvent {
     @Override
     public String toString() {
         return "ProcessMessageEvent{" +
-                "active=" + active +
+                "activeChoice=" + active +
                 ", message=" + message +
                 ", receiveChannelId=" + receiveChannelId +
                 '}';

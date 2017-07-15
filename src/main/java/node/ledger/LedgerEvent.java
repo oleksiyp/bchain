@@ -1,12 +1,12 @@
 package node.ledger;
 
-import util.Copyable;
+import util.mutable.Mutable;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LedgerEvent implements Copyable<LedgerEvent> {
+public class LedgerEvent implements Mutable<LedgerEvent> {
     private final ProcessMessageEvent processMessageEvent;
     private final ReplayLedgerEvent replayLedgerEvent;
 
@@ -71,5 +71,10 @@ public class LedgerEvent implements Copyable<LedgerEvent> {
     public LedgerEvent setPartitions(LedgerPartition[] partitions) {
         this.partitions = partitions;
         return this;
+    }
+
+    @Override
+    public void copyFrom(LedgerEvent obj) {
+
     }
 }
