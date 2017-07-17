@@ -1,16 +1,17 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.event.Event;
 import node.datagram.event.WriteEvent;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
 import static node.datagram.event.EventType.WRITE_EVENT;
 
+@Slf4j
 public class WriteHandler implements EventHandler<Event> {
     private final ByteBuffer buffer;
 
@@ -30,9 +31,9 @@ public class WriteHandler implements EventHandler<Event> {
         buffer.clear();
         writeEvent.getMessage().serialize(buffer);
         buffer.flip();
-        DatagramChannel channel = writeEvent.getParty().getChannel();
-        SocketAddress sendAddress = writeEvent.getParty().getAddress().toInetSocketAddress();
-        channel.send(buffer, sendAddress);
-        writeEvent.getMessage().clear();
+        DatagramChannel channel = writeEvent.getTo().getChannel();
+        channel.write(buffer);
+        buffer.flip();
+        log.trace("Writing {} bytes of {}", buffer.remaining(), writeEvent.getMessage());
     }
 }

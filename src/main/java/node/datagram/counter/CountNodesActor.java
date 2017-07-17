@@ -58,7 +58,6 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
         return (ctx, message) -> {
             GossipNode gossipNode = ctx.getGossipNode();
             if (message.instanceOf(CountNodesMessage.TYPE)) {
-                ctx.activateSelf();
 
                 RemoteParties remoteParties = gossipNode.getRemoteParties();
                 List<Party> list = remoteParties.getList();
@@ -70,7 +69,13 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
                     parties--;
                 }
 
+
                 count = 1;
+                ctx.activateSelf();
+
+                if (parties == 0) {
+                    reply(ctx);
+                }
             }
         };
     }
@@ -79,24 +84,29 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     @Override
     public BiConsumer<ActorContext, Message> behaviour() {
         return (ctx, message) -> {
-            GossipNode gossipNode = ctx.getGossipNode();
             if (message.instanceOf(AckCountNodesMessage.TYPE)) {
                 acks++;
                 count += message.castTo(AckCountNodesMessage.TYPE).getCount();
 
                 if (parties == acks) {
-                    Message ackMessage = ackMessage(ctx,
-                            sender.isSet() ? sender : gossipNode.address(),
-                            count);
-
-                    gossipNode
-                            .send(ackMessage);
-
-                    ctx.deactivateSelf();
+                    reply(ctx);
                 }
                 ctx.cancelMessage();
             }
         };
+    }
+
+    private void reply(ActorContext ctx) {
+        GossipNode gossipNode = ctx.getGossipNode();
+
+        Message ackMessage = ackMessage(ctx,
+                sender.isSet() ? sender : gossipNode.address(),
+                count);
+
+        gossipNode
+                .send(ackMessage);
+
+        ctx.deactivateSelf();
     }
 
     @Override

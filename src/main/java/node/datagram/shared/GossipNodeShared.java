@@ -9,7 +9,6 @@ import node.datagram.Party;
 import node.datagram.event.Event;
 import node.datagram.handlers.*;
 import util.Cancelable;
-import util.DisruptorUtil;
 
 import java.io.IOException;
 import java.nio.channels.Selector;
@@ -41,12 +40,13 @@ public class GossipNodeShared implements Cancelable {
                 new BlockingWaitStrategy());
 
         readProcessDisruptor
-                .handleEventsWith(DisruptorUtil.seq(
-                        new ReadIsSendHandler(factory),
-                        new LedgerHandler(),
-                        new MessageHandler(),
-                        new BroadcastHandler(),
-                        new ClearHandler()));
+                .handleEventsWith(
+                        new SequenceHandler("PROCESS",
+                            new ReadIsSendHandler(factory),
+                            new LedgerHandler(),
+                            new MessageHandler(),
+                            new BroadcastHandler(),
+                            new ClearHandler()));
 
         readProcessDisruptor.start();
 
@@ -61,7 +61,8 @@ public class GossipNodeShared implements Cancelable {
 
         writeDisruptor
                 .handleEventsWith(
-                        DisruptorUtil.seq(
+                        new SequenceHandler(
+                                "WRITE",
                                 new WriteHandler(writeBufSize),
                                 new ClearHandler()));
 

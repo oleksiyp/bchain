@@ -1,12 +1,14 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.ledger.Ledger;
 import node.datagram.event.*;
 
 import static node.datagram.event.EventType.READ_EVENT;
 import static node.datagram.event.EventType.SEND_EVENT;
 
+@Slf4j
 public class LedgerHandler implements EventHandler<Event> {
     @Override
     public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
@@ -14,9 +16,11 @@ public class LedgerHandler implements EventHandler<Event> {
             Ledger ledger = event.getSelf().getGossipNode().getLedger();
             SendEvent sendEvent = event.getSubEvent(SEND_EVENT);
             if (!onSendEvent(ledger, sendEvent)) {
+                log.trace("Message already in {} ledger. Clearing event", event.getSelf());
                 event.getSubEvent().clear();
             }
             if (sendEvent.getMessage().getSubType().activeChoice() == null) {
+                log.trace("{} message is cleared. Clearing event", event.getSelf());
                 event.getSubEvent().clear();
             }
         }

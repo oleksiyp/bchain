@@ -1,5 +1,6 @@
 package node.datagram;
 
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.ledger.Ledger;
 import node.datagram.shared.GossipNodeShared;
 import node.datagram.event.RegisterListenerEvent;
@@ -24,6 +25,7 @@ import static node.datagram.event.EventType.REGISTER_LISTENER_EVENT;
 import static node.datagram.event.EventType.REGISTER_PARTY_EVENT;
 import static node.datagram.event.EventType.SEND_EVENT;
 
+@Slf4j
 public class DatagramGossipNode implements GossipNode {
     private final GossipNodeShared shared;
     private final Map<MessageType<?>, List<Consumer<Message>>> listeners;
@@ -70,7 +72,7 @@ public class DatagramGossipNode implements GossipNode {
 
         this.ledger = ledger;
 
-        remoteParties = new RemoteParties(this, shared, selfParty.getChannel());
+        remoteParties = new RemoteParties(this, shared);
         listeners = new HashMap<>();
     }
 
@@ -97,6 +99,7 @@ public class DatagramGossipNode implements GossipNode {
 
     @Override
     public void join(Address address) {
+        log.info("Joining {} to {}", selfParty, address);
         shared
                 .getReadProcessDispatcher()
                 .dispatch(2, (i, event) -> {
@@ -152,6 +155,8 @@ public class DatagramGossipNode implements GossipNode {
             Message message = sendEvent.getMessage();
             initMessageForSend(msg);
             message.copyFrom(msg);
+
+            log.info("Sending {} to {}", msg, msg.getReceiver().isSet() ? msg.getReceiver() : "(ALL)");
         });
     }
 

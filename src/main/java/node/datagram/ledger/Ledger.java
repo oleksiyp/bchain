@@ -2,6 +2,7 @@ package node.datagram.ledger;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.GossipNode;
 import node.datagram.HeaderType;
 import node.datagram.Message;
@@ -12,6 +13,7 @@ import java.util.function.Consumer;
 
 @Getter
 @Setter
+@Slf4j
 public class Ledger {
     private final MappedQueue<UberActor> mappedQueue;
     private final ActorContext actorContext;
@@ -25,6 +27,12 @@ public class Ledger {
 
     public boolean add(Message message) {
         boolean addedToLedger = mappedQueue.add(message.getId(), message.getTimestamp());
+
+        log.debug("Added {} to {} ledger. {}",
+                message,
+                gossipNode.address(),
+                addedToLedger ? "New message" : "Already in ledger");
+
         act(message, addedToLedger);
         return addedToLedger;
     }
@@ -62,8 +70,11 @@ public class Ledger {
             Mutable<?> mutable = uberActor.getSubActor().get(type);
             if (mutable instanceof Actor) {
                 Actor actor = (Actor) mutable;
+
                 actorContext.setSelf(actor);
                 actorContext.setSelfType(type);
+
+                String msgText = message.toString();
 
                 if (!addedToLedger) {
                     actor.duplicateBehaviour()
@@ -78,6 +89,12 @@ public class Ledger {
                     actor.behaviour()
                             .accept(actorContext, message);
                 }
+
+
+                log.info("Dispatched {} to {} at {}: {}{}", msgText, actor, gossipNode.address(),
+                        addedToLedger ? "New to Ledger. " : "Already in Ledger. ",
+                        init ? (uberActor.getSubActor().isActive(type) ? "Initialized actor. " : "") : "Referenced by ID. ",
+                        message.getSender().isSet() ? "Received message. " : "Self sent message. ");
             }
         };
 

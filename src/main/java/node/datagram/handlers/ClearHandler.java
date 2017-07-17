@@ -1,6 +1,7 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.event.Event;
 
 public class ClearHandler implements EventHandler<Event> {

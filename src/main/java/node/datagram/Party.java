@@ -6,7 +6,6 @@ import lombok.ToString;
 
 import java.nio.channels.DatagramChannel;
 
-@ToString(exclude = {"gossipNode", "channel"})
 @Getter
 @EqualsAndHashCode(of = "address")
 public class Party {
@@ -22,5 +21,10 @@ public class Party {
             throw new RuntimeException("Address is not set");
         }
         this.gossipNode = gossipNode;
+    }
+
+    @Override
+    public String toString() {
+        return address.toString();
     }
 }

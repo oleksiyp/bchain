@@ -33,21 +33,22 @@ public class BroadcastHandler implements EventHandler<Event> {
             SendEvent sendEvent = event.getSubEvent(SEND_EVENT);
 
             Message message = sendEvent.getMessage();
+
+            RemoteParties parties = gossipNode.getRemoteParties();
+            parties.register(message.getSender());
+            List<Party> list = parties.getList();
+
             if (message.getReceiver().isSet()) {
                 if (message.getReceiver().equals(gossipNode.address())) {
                     return;
                 }
             }
 
-            RemoteParties remoteParties = gossipNode.getRemoteParties();
-            remoteParties.register(message.getSender());
-            List<Party> list = remoteParties.getList();
-
             int n = countPartiesToSend(sendEvent, list);
 
-            publisher.init(gossipNode, sendEvent);
+            publisher.init(gossipNode, sendEvent, party, shared);
             shared.getWriteDispatcher().dispatch(n, publisher);
-            publisher.init(null, null);
+            publisher.init(null, null, null, null);
 
         } else if (event.isSubEventActive(REGISTER_PARTY_EVENT)) {
             RegisterPartyEvent registerPartyEvent = event.getSubEvent(REGISTER_PARTY_EVENT);
@@ -61,27 +62,39 @@ public class BroadcastHandler implements EventHandler<Event> {
         int it;
         private GossipNode gossipNode;
         private SendEvent sendEvent;
+        private Party party;
+        private GossipNodeShared shared;
+        private List<Party> partyList;
 
-        private void init(GossipNode gossipNode, SendEvent sendEvent) {
+        private void init(GossipNode gossipNode, SendEvent sendEvent, Party party, GossipNodeShared shared) {
             it = 0;
+            this.party = party;
+            this.shared = shared;
             this.gossipNode = gossipNode;
             this.sendEvent = sendEvent;
+
+            if (gossipNode != null) {
+                partyList = gossipNode.getRemoteParties().getList();
+            } else {
+                partyList = null;
+            }
         }
 
         @Override
         public void accept(Integer i, Event event) {
-            RemoteParties remoteParties = gossipNode.getRemoteParties();
-            List<Party> list = remoteParties.getList();
 
-            Party next = list.get(it++);
+            Party next = partyList.get(it++);
 
-            while (!filterParty(sendEvent, next)) {
-                next = list.get(it++);
+            while (!filterParty(sendEvent.getMessage(), next.getAddress())) {
+                next = partyList.get(it++);
             }
+
+            event.setSelf(party);
+            event.setShared(shared);
 
             WriteEvent writeEvent = event.getSubEvent().activate(WRITE_EVENT);
 
-            writeEvent.setParty(next);
+            writeEvent.setTo(next);
             Message message = writeEvent.getMessage();
 
             message.copyFrom(sendEvent.getMessage());
@@ -93,7 +106,7 @@ public class BroadcastHandler implements EventHandler<Event> {
         int n = 0;
         for (int i = 0; i < parties.size(); i++) {
             Party next = parties.get(i);
-            if (!filterParty(sendEvent, next)) {
+            if (!filterParty(sendEvent.getMessage(), next.getAddress())) {
                 continue;
             }
             n++;
@@ -101,16 +114,13 @@ public class BroadcastHandler implements EventHandler<Event> {
         return n;
     }
 
-    private static boolean filterParty(SendEvent sendEvent, Party party) {
-        Message message = sendEvent.getMessage();
-        Address partyAddress = party.getAddress();
-
+    private static boolean filterParty(Message message, Address address) {
         if (message.getReceiver().isSet()) {
-            if (!partyAddress.equals(message.getReceiver())) {
+            if (!address.equals(message.getReceiver())) {
                 return false;
             }
         } else {
-            if (partyAddress.equals(message.getSender())) {
+            if (address.equals(message.getSender())) {
                 return false;
             }
         }

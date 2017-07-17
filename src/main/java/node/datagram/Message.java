@@ -110,10 +110,11 @@ public class Message implements Mutable<Message>, Serializable {
     }
 
     public String toString() {
-        return "Message(" +
-                Long.toUnsignedString(this.getId(), 16) + ", " +
-                "from=" + sender + ", " +
-                "to=" + receiver + ", " +
-                this.getSubType() + ")";
+        String idStr = Long.toUnsignedString(id);
+        if (idStr.length() > 4) {
+            idStr = idStr.substring(0, 4);
+        }
+
+        return idStr + ":" + this.getSubType().toString();
     }
 }

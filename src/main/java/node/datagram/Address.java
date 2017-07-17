@@ -46,8 +46,7 @@ public class Address implements Mutable<Address>, Serializable {
             data[i] = obj.data[i];
         }
         port = obj.port;
-
-        socketAddress = null;
+        socketAddress = obj.socketAddress;
     }
 
     @Override

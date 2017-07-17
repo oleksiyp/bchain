@@ -13,7 +13,7 @@ import util.mutable.Mutable;
 @ToString
 public class WriteEvent implements Mutable<WriteEvent> {
     private final Message message;
-    private Party party;
+    private Party to;
 
     public WriteEvent(GossipFactory factory) {
         message = factory.createMessage();
@@ -22,12 +22,12 @@ public class WriteEvent implements Mutable<WriteEvent> {
     @Override
     public void copyFrom(WriteEvent obj) {
         if (obj == null) {
-            party = null;
+            to = null;
             message.clear();
             return;
         }
 
-        party = obj.party;
+        to = obj.to;
         message.copyFrom(obj.message);
     }
 }

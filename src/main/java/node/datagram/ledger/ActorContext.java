@@ -3,6 +3,7 @@ package node.datagram.ledger;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import node.datagram.GossipNode;
 import node.datagram.Message;
 import util.mutable.Mutable;
@@ -10,6 +11,7 @@ import util.mutable.Mutable;
 @Getter
 @Setter
 @ToString
+@Slf4j
 public class ActorContext implements Mutable<ActorContext> {
     private long referenceId;
     private boolean initialization;
@@ -46,6 +48,7 @@ public class ActorContext implements Mutable<ActorContext> {
 
     public void activateSelf() {
         uberSelf.getSubActor().activate(selfType);
+        log.debug("Activating {} at {}", self, gossipNode.address());
     }
 
     public <T> Message newMessage() {
@@ -53,14 +56,17 @@ public class ActorContext implements Mutable<ActorContext> {
     }
 
     public void deactivateSelf() {
+        log.debug("Deactivating {} at {}", self, gossipNode.address());
         uberSelf.getSubActor().deactivate(selfType);
     }
 
     public void stopGossip() {
+        log.debug("Stopping gossipping a {}", message);
         message.getReceiver().copyFrom(gossipNode.address());
     }
 
     public void cancelMessage() {
+        log.debug("Stopping processing a {}", message);
         message.clear();
     }
 }

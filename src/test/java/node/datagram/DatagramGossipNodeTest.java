@@ -66,8 +66,9 @@ public class DatagramGossipNodeTest {
 
         Random rnd = new Random();
 
+        AtomicInteger next = new AtomicInteger(2000);
         idGenerator = rnd::nextLong;
-        portGenerator = () -> rnd.nextInt(65536);
+        portGenerator = next::getAndIncrement;
 
         node1 = createNode(shared);
         node2 = createNode(shared);
@@ -83,7 +84,7 @@ public class DatagramGossipNodeTest {
         node1.join(node2.address());
         node3.join(node2.address());
         node3.join(node1.address());
-//        node4.join(node2.address());
+        node4.join(node2.address());
 
         SECONDS.sleep(2);
     }
@@ -103,7 +104,7 @@ public class DatagramGossipNodeTest {
                 CountNodesMessage.TYPE));
 
         latch.await();
-        Assert.assertEquals(3, actual.get());
+        Assert.assertEquals(4, actual.get());
 
     }
 

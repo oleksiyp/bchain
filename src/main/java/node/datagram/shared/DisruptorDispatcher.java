@@ -2,9 +2,11 @@ package node.datagram.shared;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.function.BiConsumer;
 
+@Slf4j
 public class DisruptorDispatcher<T> implements Dispatcher<T> {
     private final RingBuffer<T> ringBuffer;
 
@@ -20,8 +22,10 @@ public class DisruptorDispatcher<T> implements Dispatcher<T> {
         long next = ringBuffer.next(n);
         try {
             for (int i = 0; i < n; i++) {
-                T event = ringBuffer.get(i + next - n + 1);
+                long seq = i + next - n + 1;
+                T event = ringBuffer.get(seq);
                 consumer.accept(i, event);
+                log.trace("Dispatched {} {}", seq, event);
             }
         } finally {
             ringBuffer.publish(next - n + 1,next);

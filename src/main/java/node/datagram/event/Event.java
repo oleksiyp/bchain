@@ -11,7 +11,6 @@ import util.mutable.MutableUnion;
 
 @Setter
 @Getter
-@ToString(exclude = {"shared", "self"}, includeFieldNames = false)
 public class Event implements Mutable<Event> {
     private Party self;
     private GossipNodeShared shared;
@@ -45,5 +44,10 @@ public class Event implements Mutable<Event> {
 
     public <T extends Mutable<T>> T activateSubEvent(EventType<T> eventType) {
         return getSubEvent().activate(eventType);
+    }
+
+    @Override
+    public String toString() {
+        return subEvent.toString();
     }
 }
