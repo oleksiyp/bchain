@@ -3,13 +3,11 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.datagram.Message;
+import node.datagram.GossipFactory;
 import node.datagram.Party;
 import node.datagram.shared.GossipNodeShared;
 import util.mutable.Mutable;
 import util.mutable.MutableUnion;
-
-import java.util.function.Supplier;
 
 @Setter
 @Getter
@@ -20,15 +18,17 @@ public class Event implements Mutable<Event> {
 
     private final MutableUnion<EventType<?>> subEvent;
 
-    public Event(Supplier<Message> messageFactory) {
-        subEvent = new MutableUnion<>(EventType.ALL);
+    public Event(GossipFactory factory) {
+        subEvent = new MutableUnion<>(
+                factory.getEventTypes(),
+                factory);
     }
 
     @Override
     public void copyFrom(Event event) {
         if (event == null) {
             self = null;
-            subEvent.copyFrom(null);
+            subEvent.clear();
             return;
         }
         self = event.self;

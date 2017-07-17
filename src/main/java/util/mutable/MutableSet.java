@@ -4,11 +4,12 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import lombok.ToString;
-import node.datagram.Choice;
 import util.Serializable;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @ToString(of = "values", includeFieldNames = false)
 public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, Serializable {
@@ -16,11 +17,11 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
     private Map<Integer, T> of;
     private final Map<T, Mutable<?>> values;
 
-    public MutableSet(Map<Integer, T> of) {
+    public MutableSet(Map<Integer, T> of, Object arg) {
         this.of = of;
         selected = new TIntHashSet(of.size());
         values = new HashMap<>(of.size());
-        of.forEach((tag, type) -> values.put(type, type.getConstructor().get()));
+        of.forEach((tag, type) -> values.put(type, type.getConstructor().apply(arg)));
     }
 
     @Override
@@ -38,12 +39,12 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         while (iterator.hasNext()) {
             int tag = iterator.next();
             T type = of.get(tag);
-            values.get(type).copyFrom(obj.values.get(type));
+            values.get(type).copyFromObj(obj.values.get(type));
             selected.add(tag);
         }
     }
 
-    public <C extends Choice<R>, R extends Mutable<R> & Serializable> R activate(C type) {
+    public <C extends Choice<R>, R extends Mutable<R>> R activate(C type) {
         this.selected.add(type.getTag());
         return (R) values.get(type);
     }
@@ -52,7 +53,7 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         return selected.contains(type.getTag());
     }
 
-    public <C extends Choice<R>, R extends Mutable<R> & Serializable> R get(C type) {
+    public <C extends Choice<R>, R extends Mutable<R>> R get(C type) {
         return (R) values.get(type);
     }
 
@@ -99,5 +100,17 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
             T type = of.get(tag);
             ((Serializable)values.get(type)).serialize(buffer);
         }
+    }
+
+    public void iterateActive(Consumer<T> consumer) {
+        selected.forEach(tag -> {
+            consumer.accept(of.get(tag));
+            return true;
+        });
+
+    }
+
+    public void iterateAll(Consumer<T> consumer) {
+        of.forEach((k, v) -> consumer.accept(v));
     }
 }

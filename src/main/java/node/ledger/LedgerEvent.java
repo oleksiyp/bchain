@@ -26,16 +26,16 @@ public class LedgerEvent implements Mutable<LedgerEvent> {
         return replayLedgerEvent;
     }
 
-    public void copyTo(LedgerEvent otherEvent) {
-        processMessageEvent.copyTo(otherEvent.processMessageEvent);
-        replayLedgerEvent.copyTo(otherEvent.replayLedgerEvent);
-        otherEvent.ledgerListener = ledgerListener;
-    }
-
-    public void clear() {
-        processMessageEvent.clear();
-        replayLedgerEvent.clear();
-        ledgerListener = null;
+    @Override
+    public void copyFrom(LedgerEvent otherEvent) {
+        if (otherEvent == null) {
+            processMessageEvent.clear();
+            replayLedgerEvent.clear();
+            ledgerListener = null;
+        }
+//        processMessageEvent.copyFromObj(otherEvent.processMessageEvent);
+//        replayLedgerEvent.copyFromObj(otherEvent.replayLedgerEvent);
+        ledgerListener = otherEvent.ledgerListener;
     }
 
     public LedgerListener getLedgerListener() {
@@ -73,8 +73,5 @@ public class LedgerEvent implements Mutable<LedgerEvent> {
         return this;
     }
 
-    @Override
-    public void copyFrom(LedgerEvent obj) {
 
-    }
 }

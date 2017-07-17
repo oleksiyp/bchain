@@ -3,6 +3,7 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import node.datagram.GossipFactory;
 import node.datagram.Message;
 import node.datagram.MessageType;
 import util.mutable.Mutable;
@@ -16,6 +17,10 @@ public class RegisterListenerEvent implements Mutable<RegisterListenerEvent> {
     private boolean add;
     private MessageType<?> messageType;
     private Consumer<Message> listener;
+
+    public RegisterListenerEvent(GossipFactory factory) {
+
+    }
 
     @Override
     public void copyFrom(RegisterListenerEvent obj) {

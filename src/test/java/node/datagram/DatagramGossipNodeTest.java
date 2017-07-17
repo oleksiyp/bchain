@@ -4,110 +4,126 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import node.datagram.counter.AckCountNodesMessage;
+import node.datagram.counter.CountNodesMessage;
+import node.datagram.counter.CountNodesActor;
+import node.datagram.ledger.UberActor;
+import node.datagram.ledger.ActorContext;
+import node.datagram.ledger.Ledger;
 import node.datagram.shared.GossipNodeShared;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import util.MappedQueue;
 import util.Serializable;
 import util.mutable.Mutable;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static node.datagram.MessageType.PING_MESSAGE_TYPE;
 
 public class DatagramGossipNodeTest {
 
     private Gossip node1;
     private Gossip node2;
     private Gossip node3;
+    private Gossip node4;
 
-    public static final MessageType<TestMessage> TEST_MESSAGE = MessageType.register(1,
+    public static final MessageType<TestMessage> TEST_MESSAGE = new MessageType<>(
+            5,
             "TEST",
             TestMessage.class,
             TestMessage::new);
 
+    private Supplier<Long> idGenerator;
+    private Supplier<Integer> portGenerator;
+    private GossipNodeShared shared;
+    private GossipFactoryImpl factory;
+    private List<Gossip> gossips;
+
     @Before
     public void setUp() throws Exception {
-        Supplier<Message> messageFactory = () -> {
-                return new Message();
-        };
+        factory = new GossipFactoryImpl();
 
-        GossipNodeShared shared = new GossipNodeShared(
+        factory.register(TEST_MESSAGE);
+        factory.register(CountNodesActor.TYPE);
+        factory.register(CountNodesMessage.TYPE);
+        factory.register(AckCountNodesMessage.TYPE);
+
+        shared = new GossipNodeShared(
                 16 * 1024,
                 1024,
-                1024,
-                messageFactory);
+                factory);
 
         Random rnd = new Random();
 
-        node1 = new DatagramGossipNode(
-                shared,
-                Inet4Address.getByName("localhost"),
-                Inet4Address.getByName("localhost"),
-                () -> rnd.nextInt(65536),
-                1024,
-                SECONDS.toMillis(60),
-                messageFactory);
+        idGenerator = rnd::nextLong;
+        portGenerator = () -> rnd.nextInt(65536);
 
-        node2 = new DatagramGossipNode(
-                shared,
-                Inet4Address.getByName("localhost"),
-                Inet4Address.getByName("localhost"),
-                () -> rnd.nextInt(65536),
-                1024,
-                SECONDS.toMillis(60),
-                messageFactory);
+        node1 = createNode(shared);
+        node2 = createNode(shared);
+        node3 = createNode(shared);
+        node4 = createNode(shared);
 
-        node3 = new DatagramGossipNode(
-                shared,
-                Inet4Address.getByName("localhost"),
-                Inet4Address.getByName("localhost"),
-                () -> rnd.nextInt(65536),
-                1024,
-                SECONDS.toMillis(60),
-                messageFactory);
-
-        long []start = new long[1];
-        node2.listen(TEST_MESSAGE, msg -> {
-            if (start[0] == 0) {
-                start[0] = System.nanoTime();
-            }
-            TestMessage testMessage = msg.getSubType(TEST_MESSAGE);
-            testMessage.value++;
-            double t = (System.nanoTime() - start[0]) / 1e9;
-            if (t > 1000) {
-                System.out.printf("%06.3f: %d%n", t, testMessage.getValue());
-            }
-        });
+        gossips = new ArrayList<>();
+        gossips.add(node1);
+        gossips.add(node2);
+        gossips.add(node3);
+        gossips.add(node4);
 
         node1.join(node2.address());
         node3.join(node2.address());
         node3.join(node1.address());
+//        node4.join(node2.address());
+
+        SECONDS.sleep(2);
     }
 
     @Test
     public void send1Mesage() throws Exception {
-//        Message msg = new Message();
-//        TestMessage testMessage = msg.getSubType().activate(TEST_MESSAGE);
-//        testMessage.value = 22;
-//        node1.send(msg);
 
-        SECONDS.sleep(2);
+        AtomicLong actual = new AtomicLong();
+        CountDownLatch latch = new CountDownLatch(1);
 
-        System.out.println(((GossipNode)node1).getRemoteParties());
-        System.out.println(((GossipNode)node2).getRemoteParties());
-        System.out.println(((GossipNode)node3).getRemoteParties());
+        node3.listen(AckCountNodesMessage.TYPE, (msg, ackCount) -> {
+            actual.set(ackCount.getCount());
+            latch.countDown();
+        });
 
-        Message msg = new Message();
-        TestMessage testMessage = msg.getSubType().activate(TEST_MESSAGE);
-        testMessage.value = 0;
-        node3.send(msg);
+        node3.send(new Message(factory,
+                CountNodesMessage.TYPE));
 
-        SECONDS.sleep(6000);
+        latch.await();
+        Assert.assertEquals(3, actual.get());
+
+    }
+
+    private DatagramGossipNode createNode(GossipNodeShared shared) throws IOException {
+        MappedQueue<UberActor> mappedQueue = new MappedQueue<>(
+                1024,
+                SECONDS.toMillis(60),
+                shared.getFactory()::createUberActor,
+                Mutable::clear);
+
+        ActorContext context = new ActorContext();
+        DatagramGossipNode node = new DatagramGossipNode(
+                shared,
+                Inet4Address.getByName("localhost"),
+                Inet4Address.getByName("localhost"),
+                portGenerator,
+                idGenerator,
+                new Ledger(mappedQueue, context));
+
+        return node;
     }
 
     @Getter

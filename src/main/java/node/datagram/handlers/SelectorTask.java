@@ -1,5 +1,6 @@
 package node.datagram.handlers;
 
+import node.datagram.Message;
 import node.datagram.Party;
 import node.datagram.event.ReadEvent;
 import node.datagram.shared.Dispatcher;
@@ -95,9 +96,9 @@ public class SelectorTask implements Runnable {
                     return;
                 }
                 ReadEvent readEvent = event.getSubEvent().activate(READ_EVENT);
-
-                readEvent.getReceiveAddress().copyFrom(receiveAddress);
-                readEvent.getMessage().deserialize(buffer);
+                Message message = readEvent.getMessage();
+                message.deserialize(buffer);
+                message.getSender().copyFromObj(receiveAddress);
             } catch (IOException ex) {
                 try {
                     key.channel().close();

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import node.datagram.Address;
+import node.datagram.GossipFactory;
 import util.mutable.Mutable;
 
 @Getter
@@ -12,14 +13,14 @@ import util.mutable.Mutable;
 public class RegisterPartyEvent implements Mutable<RegisterPartyEvent> {
     private final Address address;
 
-    public RegisterPartyEvent() {
-        address = new Address();
+    public RegisterPartyEvent(GossipFactory factory) {
+        address = factory.createAddress();
     }
 
     @Override
     public void copyFrom(RegisterPartyEvent obj) {
         if (obj == null) {
-            address.copyFrom(null);
+            address.clear();
             return;
         }
         obj.address.copyFrom(obj.address);

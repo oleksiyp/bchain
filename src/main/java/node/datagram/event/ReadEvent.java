@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import node.datagram.Address;
+import node.datagram.GossipFactory;
 import node.datagram.Message;
 import util.mutable.Mutable;
 
@@ -12,25 +13,17 @@ import util.mutable.Mutable;
 @ToString
 public class ReadEvent implements Mutable<ReadEvent> {
     private final Message message;
-    private final Address receiveAddress;
-    private boolean inLedger;
 
-    public ReadEvent() {
-        message = new Message();
-        receiveAddress = new Address();
+    public ReadEvent(GossipFactory factory) {
+        message = factory.createMessage();
     }
-
 
     @Override
     public void copyFrom(ReadEvent obj) {
         if (obj == null) {
-            message.copyFrom(null);
-            receiveAddress.copyFrom(null);
-            inLedger = false;
+            message.clear();
             return;
         }
         message.copyFrom(obj.message);
-        receiveAddress.copyFrom(obj.receiveAddress);
-        inLedger = obj.inLedger;
     }
 }

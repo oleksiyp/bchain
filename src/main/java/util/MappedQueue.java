@@ -20,7 +20,10 @@ public class MappedQueue<T> implements Iterable<T> {
     private final long maxTime;
     private long from, to;
 
-    public MappedQueue(int maxSize, long maxTime, Supplier<T> factory, Consumer<T> wiper) {
+    public MappedQueue(int maxSize,
+                       long maxTime,
+                       Supplier<T> factory,
+                       Consumer<T> wiper) {
         this.maxTime = maxTime;
         queue = new Object[maxSize];
         ids = new long[maxSize];
@@ -30,14 +33,14 @@ public class MappedQueue<T> implements Iterable<T> {
         setAll(queue, i -> factory.get());
     }
 
-    public T add(long id, long timestamp) {
+    public boolean add(long id, long timestamp) {
         long time = System.currentTimeMillis();
         if (abs(timestamp - time) > maxTime) {
-            return null;
+            return false;
         }
 
         if (map.containsKey(id)) {
-            return null;
+            return false;
         }
 
         cleanupByTime(time);
@@ -55,7 +58,7 @@ public class MappedQueue<T> implements Iterable<T> {
 
         to++;
 
-        return item;
+        return true;
     }
 
     private void removeItem(long idx) {

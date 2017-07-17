@@ -1,9 +1,10 @@
 package node.datagram;
 
+import node.datagram.ledger.Ledger;
 import node.datagram.shared.GossipNodeShared;
 import node.datagram.event.RegisterListenerEvent;
 import node.datagram.event.SendEvent;
-import util.MappedQueue;
+import util.mutable.Mutable;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.nio.channels.DatagramChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,27 +34,29 @@ public class DatagramGossipNode implements GossipNode {
     private Ledger ledger;
     private final Party selfParty;
     private RemoteParties remoteParties;
+    private Supplier<Long> idGenerator;
 
     public DatagramGossipNode(
             GossipNodeShared shared,
             InetAddress publicAddress,
             InetAddress listenAddress,
             Supplier<Integer> portRng,
-            int ledgerSize,
-            long ledgerRetentionTime,
-            Supplier<Message> messageFactory) throws IOException {
+            Supplier<Long> idGenerator,
+            Ledger ledger) throws IOException {
+
         this.shared = shared;
+        this.idGenerator = idGenerator;
+        ledger.setGossipNode(this);
 
         selfParty = tryBindingPorts(portRng, (port) -> {
-            Address address = new Address();
-            address.copyFrom(new InetSocketAddress(listenAddress, port));
+            Address address = getFactory().createAddress();
+            address.copyFromObj(new InetSocketAddress(listenAddress, port));
             try {
                 DatagramChannel channel = DatagramChannel.open();
                 channel.configureBlocking(false);
                 channel.bind(address.toInetSocketAddress());
                 return new Party(address, this, channel);
             } catch (IOException e) {
-                System.out.println(e);
                 throw new IOError(e);
             }
         });
@@ -61,16 +65,10 @@ public class DatagramGossipNode implements GossipNode {
 
         this.listenAddress = selfParty.getAddress();
 
-        this.publicAddress = new Address();
-        this.publicAddress.copyFrom(new InetSocketAddress(publicAddress, this.listenAddress.getPort()));
+        this.publicAddress = getFactory().createAddress();
+        this.publicAddress.copyFromObj(new InetSocketAddress(publicAddress, this.listenAddress.getPort()));
 
-        ledger = new Ledger(new MappedQueue<>(
-                ledgerSize,
-                ledgerRetentionTime,
-                messageFactory,
-                msg -> msg.copyFrom(null)
-
-        ));
+        this.ledger = ledger;
 
         remoteParties = new RemoteParties(this, shared, selfParty.getChannel());
         listeners = new HashMap<>();
@@ -112,10 +110,10 @@ public class DatagramGossipNode implements GossipNode {
                                 .copyFrom(address);
                     } else if (i == 1) {
                         SendEvent sendEvent = event.activateSubEvent(SEND_EVENT);
-                        sendEvent.getReceiverAddress().copyFrom(address);
                         Message message = sendEvent.getMessage();
-                        message.activateSubType(PING_MESSAGE_TYPE);
-                        message.getOrigin().copyFrom(publicAddress);
+                        initMessageForSend(message);
+                        message.activate(PING_MESSAGE_TYPE);
+                        message.getReceiver().copyFrom(address);
                     }
                 });
     }
@@ -137,6 +135,13 @@ public class DatagramGossipNode implements GossipNode {
     }
 
     @Override
+    public <T extends Mutable<T>> void listen(
+            MessageType<T> messageType,
+            BiConsumer<Message, T> consumer) {
+        listen(messageType, msg -> consumer.accept(msg, msg.castTo(messageType)));
+    }
+
+    @Override
     public void send(Message msg) {
         shared.getReadProcessDispatcher()
                 .dispatch(1, (i, event) -> {
@@ -145,9 +150,20 @@ public class DatagramGossipNode implements GossipNode {
 
             SendEvent sendEvent = event.getSubEvent().activate(SEND_EVENT);
             Message message = sendEvent.getMessage();
+            initMessageForSend(msg);
             message.copyFrom(msg);
-            message.getOrigin().copyFrom(publicAddress);
         });
+    }
+
+    private void initMessageForSend(Message message) {
+        message.setId(idGenerator.get());
+        message.setTimestamp(System.currentTimeMillis());
+        message.getOrigin().copyFrom(publicAddress);
+    }
+
+    @Override
+    public GossipFactory getFactory() {
+        return shared.getFactory();
     }
 
     @Override

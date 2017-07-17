@@ -25,13 +25,8 @@ public class Address implements Mutable<Address>, Serializable {
     @Getter private int port;
     InetSocketAddress socketAddress;
 
-    static long start = System.currentTimeMillis();
-
     public Address() {
         data = new byte[16];
-        if (System.currentTimeMillis() - start > 5000) {
-            Thread.dumpStack();
-        }
     }
 
     @Override
@@ -56,7 +51,7 @@ public class Address implements Mutable<Address>, Serializable {
     }
 
     @Override
-    public void copyFrom(Object obj) {
+    public void copyFromObj(Object obj) {
         if (obj instanceof InetSocketAddress)  {
             set = true;
             socketAddress = null;
@@ -75,16 +70,19 @@ public class Address implements Mutable<Address>, Serializable {
         } else if (obj instanceof Address) {
             copyFrom((Address) obj);
         } else {
-            throw new UnsupportedOperationException("copyFrom: " + obj);
+            throw new UnsupportedOperationException("copyFromObj: " + obj);
         }
     }
 
     @Override
     public void deserialize(ByteBuffer buffer) {
         if (buffer.get() == 1) {
+            set = true;
             ipv6 = buffer.get() == 1;
             buffer.get(data, 0, len());
             port = buffer.getShort() & 0xffff;
+        } else {
+            clear();
         }
     }
 
@@ -139,6 +137,6 @@ public class Address implements Mutable<Address>, Serializable {
 
     @Override
     public String toString() {
-        return "" + toInetSocketAddress();
+        return set ? ":" + port : "-";
     }
 }

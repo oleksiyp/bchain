@@ -33,6 +33,6 @@ public class WriteHandler implements EventHandler<Event> {
         DatagramChannel channel = writeEvent.getParty().getChannel();
         SocketAddress sendAddress = writeEvent.getParty().getAddress().toInetSocketAddress();
         channel.send(buffer, sendAddress);
-        writeEvent.getMessage().copyFrom(null);
+        writeEvent.getMessage().clear();
     }
 }

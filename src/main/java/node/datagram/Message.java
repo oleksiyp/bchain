@@ -1,16 +1,18 @@
 package node.datagram;
 
 import lombok.Getter;
-import lombok.ToString;
+import lombok.Setter;
 import util.Serializable;
 import util.mutable.Mutable;
 import util.mutable.MutableSet;
 import util.mutable.MutableUnion;
 
 import java.nio.ByteBuffer;
+import java.util.Date;
+import java.util.function.Consumer;
 
 @Getter
-@ToString(of = "subType", includeFieldNames = false)
+@Setter
 public class Message implements Mutable<Message>, Serializable {
     private long id;
     private long timestamp;
@@ -18,29 +20,43 @@ public class Message implements Mutable<Message>, Serializable {
     private final Address receiver;
     private final Address origin;
 
-    private MutableUnion<MessageType<?>> subType;
-    private MutableSet<HeaderType<?>> headers;
+    private final MutableUnion<MessageType<?>> subType;
+    private final MutableSet<HeaderType<?>> headers;
 
-    public Message() {
-        this.sender = new Address();
-        this.origin = new Address();
-        this.receiver = new Address();
+    public Message(GossipFactory factory) {
+        this.sender = factory.createAddress();
+        this.origin = factory.createAddress();
+        this.receiver = factory.createAddress();
 
-        subType = new MutableUnion<>(MessageType.ALL);
-        headers = new MutableSet<>(HeaderType.ALL);
+        subType = new MutableUnion<>(factory.getMessageTypes(), factory);
+        headers = new MutableSet<>(factory.getHeaderTypes(), factory);
     }
 
+    public <T extends Mutable<T>> Message(GossipFactory factory,
+                                          MessageType<T> msgType,
+                                          Consumer<T> consumer) {
+        this(factory);
+
+        consumer.accept(subType.activate(msgType));
+    }
+
+    public Message(GossipFactory factory,
+                   MessageType<?> msgType) {
+        this(factory);
+
+        subType.activate(msgType);
+    }
 
     @Override
     public void copyFrom(Message obj) {
         if (obj == null) {
             id = 0;
             timestamp = 0;
-            sender.copyFrom(null);
-            origin.copyFrom(null);
-            receiver.copyFrom(null);
-            subType.copyFrom(null);
-            headers.copyFrom(null);
+            sender.clear();
+            origin.clear();
+            receiver.clear();
+            subType.clear();
+            headers.clear();
             return;
         }
 
@@ -73,15 +89,31 @@ public class Message implements Mutable<Message>, Serializable {
         subType.serialize(buffer);
     }
 
-    public boolean isSubTypeActive(MessageType<?> MessageType) {
+    public boolean instanceOf(MessageType<?> MessageType) {
         return subType.isActive(MessageType);
     }
 
-    public <T extends Mutable<T>> T getSubType(MessageType<T> MessageType) {
-        return subType.get(MessageType);
+    public <T extends Mutable<T>> T castTo(MessageType<T> messageType) {
+        return subType.get(messageType);
     }
 
-    public <T extends Mutable<T>> T activateSubType(MessageType<T> MessageType) {
-        return subType.activate(MessageType);
+    public <T extends Mutable<T>> T activate(MessageType<T> messageType) {
+        return subType.activate(messageType);
+    }
+
+    public <T extends Mutable<T>> T getHeader(HeaderType<T> headerType) {
+        return headers.get(headerType);
+    }
+
+    public boolean hasHeader(HeaderType<?> headerType) {
+        return headers.isActive(headerType);
+    }
+
+    public String toString() {
+        return "Message(" +
+                Long.toUnsignedString(this.getId(), 16) + ", " +
+                "from=" + sender + ", " +
+                "to=" + receiver + ", " +
+                this.getSubType() + ")";
     }
 }

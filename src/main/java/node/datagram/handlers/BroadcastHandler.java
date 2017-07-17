@@ -1,9 +1,7 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
-import node.datagram.GossipNode;
-import node.datagram.Party;
-import node.datagram.RemoteParties;
+import node.datagram.*;
 import node.datagram.event.Event;
 import node.datagram.event.RegisterPartyEvent;
 import node.datagram.event.SendEvent;
@@ -33,12 +31,16 @@ public class BroadcastHandler implements EventHandler<Event> {
 
         if (event.isSubEventActive(SEND_EVENT)) {
             SendEvent sendEvent = event.getSubEvent(SEND_EVENT);
-            if (sendEvent.isInLedger()) {
-                return;
+
+            Message message = sendEvent.getMessage();
+            if (message.getReceiver().isSet()) {
+                if (message.getReceiver().equals(gossipNode.address())) {
+                    return;
+                }
             }
 
             RemoteParties remoteParties = gossipNode.getRemoteParties();
-            remoteParties.register(sendEvent.getSenderAddress());
+            remoteParties.register(message.getSender());
             List<Party> list = remoteParties.getList();
 
             int n = countPartiesToSend(sendEvent, list);
@@ -80,8 +82,10 @@ public class BroadcastHandler implements EventHandler<Event> {
             WriteEvent writeEvent = event.getSubEvent().activate(WRITE_EVENT);
 
             writeEvent.setParty(next);
-            writeEvent.getMessage().getSender().copyFrom(gossipNode.address());
-            writeEvent.getMessage().copyFrom(sendEvent.getMessage());
+            Message message = writeEvent.getMessage();
+
+            message.copyFrom(sendEvent.getMessage());
+            message.getSender().copyFrom(gossipNode.address());
         }
     }
 
@@ -98,11 +102,15 @@ public class BroadcastHandler implements EventHandler<Event> {
     }
 
     private static boolean filterParty(SendEvent sendEvent, Party party) {
-        if (party.getAddress().equals(sendEvent.getSenderAddress())) {
-            return false;
-        }
-        if (sendEvent.getReceiverAddress().isSet()) {
-            if (!party.getAddress().equals(sendEvent.getReceiverAddress())) {
+        Message message = sendEvent.getMessage();
+        Address partyAddress = party.getAddress();
+
+        if (message.getReceiver().isSet()) {
+            if (!partyAddress.equals(message.getReceiver())) {
+                return false;
+            }
+        } else {
+            if (partyAddress.equals(message.getSender())) {
                 return false;
             }
         }

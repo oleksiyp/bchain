@@ -8,6 +8,9 @@ import java.nio.ByteBuffer;
 
 @ToString
 public class PingMessage implements Mutable<PingMessage>, Serializable {
+    public PingMessage(GossipFactory factory) {
+    }
+
     @Override
     public void copyFrom(PingMessage obj) {
     }

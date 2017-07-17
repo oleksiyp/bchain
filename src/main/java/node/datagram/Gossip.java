@@ -1,5 +1,8 @@
 package node.datagram;
 
+import util.mutable.Mutable;
+
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface Gossip {
@@ -17,6 +20,9 @@ public interface Gossip {
 
     void listen(MessageType<?> messageType,
                 Consumer<Message> consumer);
+
+    <T extends Mutable<T>> void listen(MessageType<T> messageType,
+                                       BiConsumer<Message, T> consumer);
 
 
 //    void routeBack(node.Message message);

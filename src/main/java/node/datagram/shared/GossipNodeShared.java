@@ -4,7 +4,7 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import node.datagram.Message;
+import node.datagram.GossipFactory;
 import node.datagram.Party;
 import node.datagram.event.Event;
 import node.datagram.handlers.*;
@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class GossipNodeShared implements Cancelable {
     private final Selector selector;
@@ -24,14 +23,18 @@ public class GossipNodeShared implements Cancelable {
 
     private final Dispatcher<Event> readProcessDispatcher;
     private final Dispatcher<Event> writeDispatcher;
-    private final ConcurrentLinkedQueue<Party> toRegister
-            ;
+    private final ConcurrentLinkedQueue<Party> toRegister;
+    private final GossipFactory factory;
+    private final Thread selectorThread;
 
-    public GossipNodeShared(int ringBufferSize, int readBufSize, int writeBufSize, Supplier<Message> messageFactory) throws IOException {
+    public GossipNodeShared(int ringBufferSize,
+                            int writeBufSize,
+                            GossipFactory factory) throws IOException {
+        this.factory = factory;
         selector = Selector.open();
 
         readProcessDisruptor = new Disruptor<>(
-                () -> new Event(messageFactory),
+                () -> new Event(factory),
                 ringBufferSize,
                 new DefaultThreadFactory("gossip-read"),
                 ProducerType.MULTI,
@@ -39,6 +42,7 @@ public class GossipNodeShared implements Cancelable {
 
         readProcessDisruptor
                 .handleEventsWith(DisruptorUtil.seq(
+                        new ReadIsSendHandler(factory),
                         new LedgerHandler(),
                         new MessageHandler(),
                         new BroadcastHandler(),
@@ -49,7 +53,7 @@ public class GossipNodeShared implements Cancelable {
         readProcessDispatcher = new DisruptorDispatcher<>(readProcessDisruptor);
 
         writeDisruptor = new Disruptor<>(
-                () -> new Event(messageFactory),
+                () -> new Event(factory),
                 ringBufferSize,
                 new DefaultThreadFactory("gossip-write"),
                 ProducerType.SINGLE,
@@ -66,7 +70,10 @@ public class GossipNodeShared implements Cancelable {
         writeDispatcher = new DisruptorDispatcher<>(writeDisruptor);
 
         toRegister = new ConcurrentLinkedQueue<>();
-        new Thread(new SelectorTask(this, toRegister, 4 * 1024),"selector").start();
+
+        SelectorTask selectorTask = new SelectorTask(this, toRegister, 4 * 1024);
+        selectorThread = new Thread(selectorTask, "selector");
+        selectorThread.start();
     }
 
     public Selector getSelector() {
@@ -90,6 +97,8 @@ public class GossipNodeShared implements Cancelable {
 
     @Override
     public void cancel() {
+        selectorThread.interrupt();
+        selector.wakeup();
         try {
             selector.close();
         } catch (IOException e) {
@@ -97,5 +106,9 @@ public class GossipNodeShared implements Cancelable {
         }
         readProcessDisruptor.shutdown();
         writeDisruptor.shutdown();
+    }
+
+    public GossipFactory getFactory() {
+        return factory;
     }
 }

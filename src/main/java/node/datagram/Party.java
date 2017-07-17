@@ -15,7 +15,7 @@ public class Party {
     private final DatagramChannel channel;
 
     public Party(Address address, GossipNode gossipNode, DatagramChannel channel) {
-        this.address = new Address();
+        this.address = gossipNode.getFactory().createAddress();
         this.address.copyFrom(address);
         this.channel = channel;
         if (!address.isSet()) {

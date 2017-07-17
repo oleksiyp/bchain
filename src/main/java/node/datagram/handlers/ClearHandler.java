@@ -6,6 +6,6 @@ import node.datagram.event.Event;
 public class ClearHandler implements EventHandler<Event> {
     @Override
     public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
-        event.copyFrom(null);
+        event.clear();
     }
 }

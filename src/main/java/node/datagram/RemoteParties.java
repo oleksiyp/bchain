@@ -1,10 +1,12 @@
 package node.datagram;
 
+import lombok.ToString;
 import node.datagram.shared.GossipNodeShared;
 
 import java.nio.channels.DatagramChannel;
 import java.util.*;
 
+@ToString(of = "partyMap", includeFieldNames = false)
 public class RemoteParties {
     private final GossipNode gossipNode;
     private final GossipNodeShared shared;
