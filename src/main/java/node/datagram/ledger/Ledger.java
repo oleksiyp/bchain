@@ -91,10 +91,13 @@ public class Ledger {
                 }
 
 
-                log.info("Dispatched {} to {} at {}: {}{}", msgText, actor, gossipNode.address(),
-                        addedToLedger ? "New to Ledger. " : "Already in Ledger. ",
-                        init ? (uberActor.getSubActor().isActive(type) ? "Initialized actor. " : "") : "Referenced by ID. ",
-                        message.getSender().isSet() ? "Received message. " : "Self sent message. ");
+                boolean activated = uberActor.getSubActor().isActive(type);
+                if (!(addedToLedger && init && !activated)) {
+                    log.info("Dispatched {} to {} at {}: {}{}", msgText, actor, gossipNode.address(),
+                            addedToLedger ? "New to Ledger. " : "Already in Ledger. ",
+                            init ? (activated ? "Initialized actor. " : "") : "Referenced by ID. ",
+                            message.getSender().isSet() ? "Received message. " : "Self sent message. ");
+                }
             }
         };
 

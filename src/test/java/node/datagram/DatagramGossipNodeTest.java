@@ -10,6 +10,8 @@ import node.datagram.counter.CountNodesActor;
 import node.datagram.ledger.UberActor;
 import node.datagram.ledger.ActorContext;
 import node.datagram.ledger.Ledger;
+import node.datagram.pong.PongActor;
+import node.datagram.pong.PongMessage;
 import node.datagram.shared.GossipNodeShared;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,11 +26,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import static java.util.concurrent.CompletableFuture.allOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DatagramGossipNodeTest {
@@ -55,9 +60,13 @@ public class DatagramGossipNodeTest {
         factory = new GossipFactoryImpl();
 
         factory.register(TEST_MESSAGE);
+
         factory.register(CountNodesActor.TYPE);
         factory.register(CountNodesMessage.TYPE);
         factory.register(AckCountNodesMessage.TYPE);
+
+        factory.register(PongMessage.TYPE);
+        factory.register(PongActor.TYPE);
 
         shared = new GossipNodeShared(
                 16 * 1024,
@@ -81,12 +90,14 @@ public class DatagramGossipNodeTest {
         gossips.add(node3);
         gossips.add(node4);
 
-        node1.join(node2.address());
-        node3.join(node2.address());
-        node3.join(node1.address());
-        node4.join(node2.address());
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        futures.add(PongActor.join(node1, node2.address()));
+        futures.add(PongActor.join(node3, node2.address()));
+        futures.add(PongActor.join(node3, node1.address()));
+        futures.add(PongActor.join(node4, node2.address()));
 
-        SECONDS.sleep(2);
+        allOf(futures.toArray(new CompletableFuture[0]))
+                .get();
     }
 
     @Test

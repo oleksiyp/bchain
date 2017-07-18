@@ -1,5 +1,6 @@
 package node.datagram;
 
+import util.Cancelable;
 import util.mutable.Mutable;
 
 import java.util.function.BiConsumer;
@@ -18,11 +19,11 @@ public interface Gossip {
 
     void send(Message msg);
 
-    void listen(MessageType<?> messageType,
-                Consumer<Message> consumer);
+    Cancelable listen(MessageType<?> messageType,
+                      Consumer<Message> consumer);
 
-    <T extends Mutable<T>> void listen(MessageType<T> messageType,
-                                       BiConsumer<Message, T> consumer);
+    <T extends Mutable<T>> Cancelable listen(MessageType<T> messageType,
+                                             BiConsumer<Message, T> consumer);
 
 
 //    void routeBack(node.Message message);

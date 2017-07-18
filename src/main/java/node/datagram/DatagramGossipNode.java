@@ -5,6 +5,7 @@ import node.datagram.ledger.Ledger;
 import node.datagram.shared.GossipNodeShared;
 import node.datagram.event.RegisterListenerEvent;
 import node.datagram.event.SendEvent;
+import util.Cancelable;
 import util.mutable.Mutable;
 
 import java.io.IOError;
@@ -123,8 +124,8 @@ public class DatagramGossipNode implements GossipNode {
 
 
     @Override
-    public void listen(MessageType<?> messageType,
-                       Consumer<Message> consumer) {
+    public Cancelable listen(MessageType<?> messageType,
+                             Consumer<Message> consumer) {
         shared
                 .getReadProcessDispatcher()
                 .dispatch(1, (i, event) -> {
@@ -135,13 +136,25 @@ public class DatagramGossipNode implements GossipNode {
                     listenerEvent.setMessageType(messageType);
                     listenerEvent.setListener(consumer);
                 });
+
+        return () -> shared
+                .getReadProcessDispatcher()
+                .dispatch(1, (i, event) -> {
+                    RegisterListenerEvent listenerEvent = event.getSubEvent().activate(REGISTER_LISTENER_EVENT);
+                    event.setSelf(selfParty);
+                    event.setShared(shared);
+                    listenerEvent.setAdd(false);
+                    listenerEvent.setMessageType(messageType);
+                    listenerEvent.setListener(consumer);
+                });
     }
 
     @Override
-    public <T extends Mutable<T>> void listen(
+    public <T extends Mutable<T>> Cancelable listen(
             MessageType<T> messageType,
             BiConsumer<Message, T> consumer) {
-        listen(messageType, msg -> consumer.accept(msg, msg.castTo(messageType)));
+        return listen(messageType, msg ->
+                consumer.accept(msg, msg.castTo(messageType)));
     }
 
     @Override
