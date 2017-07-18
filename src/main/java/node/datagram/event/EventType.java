@@ -2,7 +2,7 @@ package node.datagram.event;
 
 import io.netty.util.collection.IntObjectHashMap;
 import lombok.*;
-import node.datagram.GossipFactory;
+import node.GossipFactory;
 import util.mutable.AbstractChoice;
 import util.mutable.Mutable;
 

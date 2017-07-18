@@ -1,12 +1,16 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
+import node.Address;
+import node.GossipNode;
+import node.Message;
+import node.RemoteParties;
 import node.datagram.*;
 import node.datagram.event.Event;
 import node.datagram.event.RegisterPartyEvent;
 import node.datagram.event.SendEvent;
 import node.datagram.event.WriteEvent;
-import node.datagram.shared.GossipNodeShared;
+import node.datagram.DatagramGossipNodeShared;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -27,7 +31,7 @@ public class BroadcastHandler implements EventHandler<Event> {
 
         Party party = event.getSelf();
         GossipNode gossipNode = party.getGossipNode();
-        GossipNodeShared shared = event.getShared();
+        DatagramGossipNodeShared shared = event.getShared();
 
         if (event.isSubEventActive(SEND_EVENT)) {
             SendEvent sendEvent = event.getSubEvent(SEND_EVENT);
@@ -63,10 +67,10 @@ public class BroadcastHandler implements EventHandler<Event> {
         private GossipNode gossipNode;
         private SendEvent sendEvent;
         private Party party;
-        private GossipNodeShared shared;
+        private DatagramGossipNodeShared shared;
         private List<Party> partyList;
 
-        private void init(GossipNode gossipNode, SendEvent sendEvent, Party party, GossipNodeShared shared) {
+        private void init(GossipNode gossipNode, SendEvent sendEvent, Party party, DatagramGossipNodeShared shared) {
             it = 0;
             this.party = party;
             this.shared = shared;

@@ -2,8 +2,8 @@ package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
-import node.datagram.Message;
-import node.datagram.MessageType;
+import node.Message;
+import node.MessageType;
 import node.datagram.Party;
 import node.datagram.event.Event;
 import node.datagram.event.RegisterListenerEvent;

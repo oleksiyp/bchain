@@ -1,55 +1,112 @@
 package node.ledger;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import node.GossipNode;
+import node.HeaderType;
 import node.Message;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import util.Cancelable;
+import util.MappedQueue;
+import util.mutable.Mutable;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-public class Ledger implements Cancelable {
-    public static final Logger LOGGER = LogManager.getLogger(Ledger.class);
+@Getter
+@Setter
+@Slf4j
+public class Ledger {
+    private final MappedQueue<UberActor> mappedQueue;
+    private final ActorContext actorContext;
+    private GossipNode gossipNode;
 
-    private LedgerDispatcher dispatcher;
-    private LedgerPartition []partitions;
-    private LedgerListener ledgerListener;
+    public Ledger(MappedQueue<UberActor> mappedQueue,
+                  ActorContext actorContext) {
+        this.mappedQueue = mappedQueue;
+        this.actorContext = actorContext;
+    }
 
-    public Ledger(int retentionSize,
-                  long retentionTime,
-                  LedgerDispatcher dispatcher) {
+    public boolean add(Message message) {
+        boolean addedToLedger = mappedQueue.add(message.getId(), message.getTimestamp());
 
-        this.dispatcher = dispatcher;
-        partitions = new LedgerPartition[dispatcher.getNPartitions()];
-        for (int i = 0; i < partitions.length; i++) {
-            partitions[i] = new LedgerPartition(retentionSize, retentionTime);
+        log.debug("Added {} to {} ledger. {}",
+                message,
+                gossipNode.address(),
+                addedToLedger ? "New message" : "Already in ledger");
+
+        act(message, addedToLedger);
+        return addedToLedger;
+    }
+
+    private void act(Message message, boolean addedToLedger) {
+        long refId;
+        boolean init;
+        if (message.hasHeader(HeaderType.REFERENCE_ID)) {
+            refId = message.getHeader(HeaderType.REFERENCE_ID).getValue();
+            init = false;
+        } else {
+            refId = message.getId();
+            init = true;
         }
-    }
 
-    public void setLedgerListener(LedgerListener ledgerListener) {
-        this.ledgerListener = ledgerListener;
-    }
+        UberActor uberActor = mappedQueue.get(refId);
+        if (uberActor == null) {
+            return;
+        }
 
-    public void processMessage(Message message, String receiveChannelId) {
-        dispatcher.dispatch((event) ->
-                event.setLedgerListener(ledgerListener)
-                        .setPartitions(partitions)
-                        .processMessage()
-                        .activate(message, receiveChannelId));
-    }
+        if (init) {
+            uberActor
+                    .getInitialMessage()
+                    .copyFrom(message);
+        }
+
+        actorContext.setGossipNode(gossipNode);
+        actorContext.setUberSelf(uberActor);
+        actorContext.setReferenceId(refId);
+        actorContext.setAddedToLedger(addedToLedger);
+        actorContext.setInitialization(init);
+        actorContext.setMessage(message);
+
+        Consumer<ActorType<?>> consumer = type -> {
+            Mutable<?> mutable = uberActor.getSubActor().get(type);
+            if (mutable instanceof Actor) {
+                Actor actor = (Actor) mutable;
+
+                actorContext.setSelf(actor);
+                actorContext.setSelfType(type);
+
+                String msgText = message.toString();
+
+                if (!addedToLedger) {
+                    actor.duplicateBehaviour()
+                            .accept(actorContext, message);
+                } else if (init) {
+                    actor.initBehaviour()
+                            .accept(actorContext, message);
+                } else if (!message.getSender().isSet()){
+                    actor.selfBehaviour()
+                            .accept(actorContext, message);
+                } else {
+                    actor.behaviour()
+                            .accept(actorContext, message);
+                }
 
 
-    public CountDownLatch replayLedger(Consumer<Message> listener) {
-        CountDownLatch latch = new CountDownLatch(1);
-        dispatcher.dispatch((event) ->
-                event.setLedgerListener(ledgerListener)
-                        .setPartitions(partitions)
-                        .replayLedger()
-                        .activate(listener, latch));
-        return latch;
-    }
+                boolean activated = uberActor.getSubActor().isActive(type);
+                if (!(addedToLedger && init && !activated)) {
+                    log.info("Dispatched {} to {} at {}: {}{}", msgText, actor, gossipNode.address(),
+                            addedToLedger ? "New to Ledger. " : "Already in Ledger. ",
+                            init ? (activated ? "Initialized actor. " : "") : "Referenced by ID. ",
+                            message.getSender().isSet() ? "Received message. " : "Self sent message. ");
+                }
+            }
+        };
 
-    @Override
-    public void cancel() {
+        if (init) {
+            uberActor.getSubActor().iterateAll(consumer);
+        } else {
+            uberActor.getSubActor().iterateActive(consumer);
+        }
+
+        actorContext.clear();
     }
 }

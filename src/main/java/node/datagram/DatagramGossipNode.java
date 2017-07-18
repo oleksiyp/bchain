@@ -1,8 +1,8 @@
 package node.datagram;
 
 import lombok.extern.slf4j.Slf4j;
-import node.datagram.ledger.Ledger;
-import node.datagram.shared.GossipNodeShared;
+import node.*;
+import node.ledger.Ledger;
 import node.datagram.event.RegisterListenerEvent;
 import node.datagram.event.SendEvent;
 import util.Cancelable;
@@ -21,14 +21,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static node.datagram.MessageType.PING_MESSAGE_TYPE;
+import static node.MessageType.PING_MESSAGE_TYPE;
 import static node.datagram.event.EventType.REGISTER_LISTENER_EVENT;
 import static node.datagram.event.EventType.REGISTER_PARTY_EVENT;
 import static node.datagram.event.EventType.SEND_EVENT;
 
 @Slf4j
 public class DatagramGossipNode implements GossipNode {
-    private final GossipNodeShared shared;
+    private final DatagramGossipNodeShared shared;
     private final Map<MessageType<?>, List<Consumer<Message>>> listeners;
 
     private Address publicAddress;
@@ -40,7 +40,7 @@ public class DatagramGossipNode implements GossipNode {
     private Supplier<Long> idGenerator;
 
     public DatagramGossipNode(
-            GossipNodeShared shared,
+            DatagramGossipNodeShared shared,
             InetAddress publicAddress,
             InetAddress listenAddress,
             Supplier<Integer> portRng,
@@ -73,7 +73,7 @@ public class DatagramGossipNode implements GossipNode {
 
         this.ledger = ledger;
 
-        remoteParties = new RemoteParties(this, shared);
+        remoteParties = new RemoteParties(this);
         listeners = new HashMap<>();
     }
 

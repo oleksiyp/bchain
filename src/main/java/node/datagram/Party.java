@@ -2,7 +2,8 @@ package node.datagram;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
+import node.Address;
+import node.GossipNode;
 
 import java.nio.channels.DatagramChannel;
 

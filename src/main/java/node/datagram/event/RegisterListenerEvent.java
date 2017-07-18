@@ -3,9 +3,9 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.datagram.GossipFactory;
-import node.datagram.Message;
-import node.datagram.MessageType;
+import node.GossipFactory;
+import node.Message;
+import node.MessageType;
 import util.mutable.Mutable;
 
 import java.util.function.Consumer;

@@ -1,14 +1,12 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
-import node.datagram.GossipFactory;
-import node.datagram.Message;
+import node.GossipFactory;
+import node.Message;
 import node.datagram.event.Event;
 import node.datagram.event.ReadEvent;
 import node.datagram.event.SendEvent;
-import org.slf4j.Logger;
 
 import static node.datagram.event.EventType.READ_EVENT;
 import static node.datagram.event.EventType.SEND_EVENT;

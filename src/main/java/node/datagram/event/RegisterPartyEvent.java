@@ -3,8 +3,8 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.datagram.Address;
-import node.datagram.GossipFactory;
+import node.Address;
+import node.GossipFactory;
 import util.mutable.Mutable;
 
 @Getter

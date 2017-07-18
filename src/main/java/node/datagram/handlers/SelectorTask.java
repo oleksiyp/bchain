@@ -1,15 +1,13 @@
 package node.datagram.handlers;
 
 import lombok.extern.slf4j.Slf4j;
-import node.datagram.Message;
+import node.Message;
 import node.datagram.Party;
 import node.datagram.event.ReadEvent;
-import node.datagram.shared.Dispatcher;
-import node.datagram.shared.GossipNodeShared;
+import node.datagram.DatagramGossipNodeShared;
 import node.datagram.event.Event;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -25,12 +23,12 @@ import static node.datagram.event.EventType.READ_EVENT;
 public class SelectorTask implements Runnable {
     private final Dispatcher<Event> dispatcher;
     private final Selector selector;
-    private final GossipNodeShared shared;
+    private final DatagramGossipNodeShared shared;
     private final ConcurrentLinkedQueue<Party> toRegister;
     private final ByteBuffer buffer;
     private Publisher publisher;
 
-    public SelectorTask(GossipNodeShared shared, ConcurrentLinkedQueue<Party> toRegister, int bufSize) {
+    public SelectorTask(DatagramGossipNodeShared shared, ConcurrentLinkedQueue<Party> toRegister, int bufSize) {
         selector = shared.getSelector();
         dispatcher = shared.getReadProcessDispatcher();
         this.shared = shared;

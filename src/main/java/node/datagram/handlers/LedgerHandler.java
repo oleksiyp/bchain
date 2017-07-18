@@ -2,10 +2,9 @@ package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
-import node.datagram.ledger.Ledger;
+import node.ledger.Ledger;
 import node.datagram.event.*;
 
-import static node.datagram.event.EventType.READ_EVENT;
 import static node.datagram.event.EventType.SEND_EVENT;
 
 @Slf4j

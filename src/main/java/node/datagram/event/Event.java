@@ -2,10 +2,9 @@ package node.datagram.event;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
-import node.datagram.GossipFactory;
+import node.GossipFactory;
 import node.datagram.Party;
-import node.datagram.shared.GossipNodeShared;
+import node.datagram.DatagramGossipNodeShared;
 import util.mutable.Mutable;
 import util.mutable.MutableUnion;
 
@@ -13,7 +12,7 @@ import util.mutable.MutableUnion;
 @Getter
 public class Event implements Mutable<Event> {
     private Party self;
-    private GossipNodeShared shared;
+    private DatagramGossipNodeShared shared;
 
     private final MutableUnion<EventType<?>> subEvent;
 
