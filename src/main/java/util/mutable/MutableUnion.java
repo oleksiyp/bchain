@@ -1,40 +1,24 @@
 package util.mutable;
 
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import io.netty.util.collection.IntObjectHashMap;
+import node.factory.RegistryMapping;
 import util.Serializable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-public class MutableUnion<T extends Choice<?>> implements Mutable<MutableUnion<T>>, Serializable {
+public class MutableUnion<T extends ChoiceType<?>> implements Mutable<MutableUnion<T>>, Serializable {
     private int choice;
-    private final Map<Integer, T> of;
-    private final TIntIntMap mapping;
-    private final int []reverseMapping;
     private final List<Mutable<?>> values;
+    private RegistryMapping<T> mapping;
 
-    public <F> MutableUnion(Map<Integer, T> of, Object arg) {
-        mapping = new TIntIntHashMap(of.size());
-        reverseMapping = new int[of.size()];
-        this.values = new ArrayList<>(of.size());
-
-        this.of = new IntObjectHashMap<>(of.size());
-        this.of.putAll(of);
-
-        int i = 0;
-        for (int tag : of.keySet()) {
-            T choice = of.get(tag);
-            mapping.put(tag, i);
-            reverseMapping[i] = tag;
-            values.add(choice.getConstructor().apply(arg));
-            i++;
-        }
-
+    public <F> MutableUnion(RegistryMapping<T> mapping) {
+        this.mapping = mapping;
         choice = -1;
+        values = new ArrayList<>(mapping.nElements());
+        for (int i = 0; i < mapping.nElements(); i++) {
+            values.add(mapping.getConstructor(i).get());
+        }
     }
 
     @Override
@@ -55,14 +39,13 @@ public class MutableUnion<T extends Choice<?>> implements Mutable<MutableUnion<T
     }
 
 
-    public <C extends Choice<R>, R extends Mutable<R>> R activate(C choice) {
+    public <C extends ChoiceType<R>, R extends Mutable<R>> R activate(C choice) {
         clear();
-        int tag = choice.getTag();
-        if (!mapping.containsKey(tag)) {
-            throw new RuntimeException("no choice registered: " +
-                    choice.getTag() + "=" + choice.getName());
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            throw new RuntimeException(choice + " not registered in " + mapping);
         }
-        this.choice = mapping.get(tag);
+        this.choice = mapping.idxByTag(tag);
         Mutable<?> value = values.get(this.choice);
         return (R) value;
     }
@@ -71,23 +54,22 @@ public class MutableUnion<T extends Choice<?>> implements Mutable<MutableUnion<T
         if (choice == -1) {
             return null;
         }
-        return of.get(reverseMapping[choice]);
+        return mapping.choiceTypeByIdx(choice);
     }
 
     public boolean isActive(T choice) {
         if (this.choice == -1) {
             return false;
         }
-        return reverseMapping[this.choice] == choice.getTag();
+        return mapping.choiceTypeByIdx(this.choice) == choice;
     }
 
-    public <C extends Choice<R>, R extends Mutable<R>> R get(C choice) {
-        int tag = choice.getTag();
-        if (!mapping.containsKey(tag)) {
-            throw new RuntimeException("no choice registered: " +
-                    tag + "=" + choice.getName());
+    public <C extends ChoiceType<R>, R extends Mutable<R>> R get(C choice) {
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            throw new RuntimeException(choice + " not registered in " + mapping);
         }
-        int idx = mapping.get(tag);
+        int idx = mapping.idxByTag(tag);
         Mutable<?> value = values.get(idx);
         return (R) value;
     }
@@ -96,10 +78,11 @@ public class MutableUnion<T extends Choice<?>> implements Mutable<MutableUnion<T
     public void deserialize(ByteBuffer buffer) {
         if (buffer.get() == 1) {
             int tag = buffer.getInt();
-            if (!mapping.containsKey(tag)) {
-                throw new RuntimeException("no choice registered: " + tag);
+            int idx = mapping.idxByTag(tag);
+            if (idx == -1) {
+                throw new RuntimeException(tag + " not registered in " + mapping);
             }
-            choice = mapping.get(tag);
+            choice = idx;
             ((Serializable)values.get(choice)).deserialize(buffer);
         } else {
             choice = -1;
@@ -110,7 +93,7 @@ public class MutableUnion<T extends Choice<?>> implements Mutable<MutableUnion<T
     public void serialize(ByteBuffer buffer) {
         buffer.put((byte)(choice != -1 ? 1 : 0));
         if (choice != -1) {
-            buffer.putInt(reverseMapping[choice]);
+            buffer.putInt(mapping.tagByIdx(choice));
             ((Serializable)values.get(choice)).serialize(buffer);
         }
     }

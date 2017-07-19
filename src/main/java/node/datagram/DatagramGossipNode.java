@@ -2,9 +2,12 @@ package node.datagram;
 
 import lombok.extern.slf4j.Slf4j;
 import node.*;
+import node.datagram.event.RegisterPartyEvent;
+import node.factory.GossipFactory;
 import node.ledger.Ledger;
 import node.datagram.event.RegisterListenerEvent;
 import node.datagram.event.SendEvent;
+import node.pong.PingMessage;
 import util.Cancelable;
 import util.mutable.Mutable;
 
@@ -21,10 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static node.MessageType.PING_MESSAGE_TYPE;
-import static node.datagram.event.EventType.REGISTER_LISTENER_EVENT;
-import static node.datagram.event.EventType.REGISTER_PARTY_EVENT;
-import static node.datagram.event.EventType.SEND_EVENT;
+import static node.datagram.event.RegisterListenerEvent.REGISTER_LISTENER_EVENT;
+import static node.datagram.event.RegisterPartyEvent.REGISTER_PARTY_EVENT;
+import static node.datagram.event.SendEvent.SEND_EVENT;
 
 @Slf4j
 public class DatagramGossipNode implements GossipNode {
@@ -116,7 +118,7 @@ public class DatagramGossipNode implements GossipNode {
                         SendEvent sendEvent = event.activateSubEvent(SEND_EVENT);
                         Message message = sendEvent.getMessage();
                         initMessageForSend(message);
-                        message.activate(PING_MESSAGE_TYPE);
+                        message.activate(PingMessage.TYPE);
                         message.getReceiver().copyFrom(address);
                     }
                 });

@@ -17,10 +17,9 @@ import java.nio.ByteBuffer;
 public class PongMessage implements Mutable<PongMessage>, Serializable {
     public static final MessageType<PongMessage> TYPE =
             new MessageType<>(
-                    62,
                     "PONG_MESSAGE",
-                    PongMessage.class,
-                    PongMessage::new);
+                    PongMessage.class
+            );
 
     @Override
     public void copyFrom(PongMessage obj) {

@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static node.datagram.event.EventType.REGISTER_LISTENER_EVENT;
-import static node.datagram.event.EventType.SEND_EVENT;
+import static node.datagram.event.RegisterListenerEvent.REGISTER_LISTENER_EVENT;
+import static node.datagram.event.SendEvent.SEND_EVENT;
 
 @Slf4j
 public class MessageHandler implements EventHandler<Event> {

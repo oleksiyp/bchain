@@ -4,7 +4,7 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import node.GossipFactory;
+import node.factory.GossipFactory;
 import node.datagram.event.Event;
 import node.datagram.handlers.*;
 import node.datagram.handlers.Dispatcher;

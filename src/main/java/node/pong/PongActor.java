@@ -13,10 +13,9 @@ import java.util.function.BiConsumer;
 public class PongActor implements Actor, Mutable<PongActor> {
     public static final ActorType<PongActor> TYPE =
             new ActorType<>(
-                    61,
                     "PONG_ACTOR",
-                    PongActor.class,
-                    PongActor::new);
+                    PongActor.class
+            );
 
 
     private void replyPong(ActorContext ctx) {
@@ -47,7 +46,7 @@ public class PongActor implements Actor, Mutable<PongActor> {
     @Override
     public BiConsumer<ActorContext, Message> initBehaviour() {
         return (ctx, message) -> {
-            if (message.instanceOf(MessageType.PING_MESSAGE_TYPE)) {
+            if (message.instanceOf(PingMessage.TYPE)) {
                 replyPong(ctx);
             }
         };
@@ -55,7 +54,7 @@ public class PongActor implements Actor, Mutable<PongActor> {
 
     @Override
     public BiConsumer<ActorContext, Message> behaviour() {
-        return NO_BEHEVIOUR;
+        return NO_BEHAVIOUR;
     }
 
 

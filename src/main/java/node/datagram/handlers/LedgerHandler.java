@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import node.ledger.Ledger;
 import node.datagram.event.*;
 
-import static node.datagram.event.EventType.SEND_EVENT;
+import static node.datagram.event.SendEvent.SEND_EVENT;
 
 @Slf4j
 public class LedgerHandler implements EventHandler<Event> {

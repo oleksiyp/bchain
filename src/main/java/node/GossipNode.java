@@ -1,5 +1,6 @@
 package node;
 
+import node.factory.GossipFactory;
 import node.ledger.Ledger;
 
 import java.util.List;

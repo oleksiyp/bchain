@@ -4,24 +4,30 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import lombok.ToString;
+import node.factory.Registry;
+import node.factory.RegistryMapping;
 import util.Serializable;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 @ToString(of = "values", includeFieldNames = false)
-public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, Serializable {
+public class MutableSet<T extends ChoiceType<?>> implements Mutable<MutableSet<T>>, Serializable {
     private TIntSet selected;
-    private Map<Integer, T> of;
-    private final Map<T, Mutable<?>> values;
+    private final List<Mutable<?>> values;
+    private RegistryMapping<T> mapping;
 
-    public MutableSet(Map<Integer, T> of, Object arg) {
-        this.of = of;
-        selected = new TIntHashSet(of.size());
-        values = new HashMap<>(of.size());
-        of.forEach((tag, type) -> values.put(type, type.getConstructor().apply(arg)));
+    public MutableSet(RegistryMapping<T> mapping) {
+        this.mapping = mapping;
+        selected = new TIntHashSet(mapping.nElements());
+        values = new ArrayList<>(mapping.nElements());
+        for (int i = 0; i < mapping.nElements(); i++) {
+            values.add(mapping.getConstructor(i).get());
+        }
     }
 
     @Override
@@ -35,31 +41,57 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         if (obj.selected.isEmpty()) {
             return;
         }
+
         TIntIterator iterator = obj.selected.iterator();
         while (iterator.hasNext()) {
-            int tag = iterator.next();
-            T type = of.get(tag);
-            values.get(type).copyFromObj(obj.values.get(type));
-            selected.add(tag);
+            int objIdx = iterator.next();
+            T choice = obj.mapping.choiceTypeByIdx(objIdx);
+            int tag = mapping.tagByChoiceType(choice);
+            if (tag == -1) {
+                throw new RuntimeException(choice + " not registered in " + mapping);
+            }
+            int idx = mapping.idxByTag(tag);
+            values.get(idx).copyFromObj(obj.values.get(objIdx));
+            selected.add(idx);
         }
     }
 
-    public <C extends Choice<R>, R extends Mutable<R>> R activate(C type) {
-        this.selected.add(type.getTag());
-        return (R) values.get(type);
+    public <C extends ChoiceType<R>, R extends Mutable<R>> R activate(C choice) {
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            throw new RuntimeException(choice + " not registered in " + mapping);
+        }
+        int idx = mapping.idxByTag(tag);
+        this.selected.add(idx);
+        return (R) values.get(idx);
     }
 
-    public boolean isActive(T type) {
-        return selected.contains(type.getTag());
+    public boolean isActive(T choice) {
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            return false;
+        }
+        int idx = mapping.idxByTag(tag);
+        return selected.contains(idx);
     }
 
-    public <C extends Choice<R>, R extends Mutable<R>> R get(C type) {
-        return (R) values.get(type);
+    public <C extends ChoiceType<R>, R extends Mutable<R>> R get(C choice) {
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            throw new RuntimeException(choice + " not registered in " + mapping);
+        }
+        int idx = mapping.idxByTag(tag);
+        return (R) values.get(idx);
     }
 
-    public void deactivate(T type) {
-        values.get(type).copyFrom(null);
-        selected.remove(type.getTag());
+    public void deactivate(T choice) {
+        int tag = mapping.tagByChoiceType(choice);
+        if (tag == -1) {
+            throw new RuntimeException(choice + " not registered in " + mapping);
+        }
+        int idx = mapping.idxByTag(tag);
+        values.get(idx).copyFrom(null);
+        selected.remove(idx);
     }
 
     public void deactivateAll() {
@@ -70,8 +102,8 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         while (iterator.hasNext()) {
             int tag = iterator.next();
             iterator.remove();
-            T type = of.get(tag);
-            values.get(type).copyFrom(null);
+            int idx = mapping.idxByTag(tag);
+            values.get(idx).copyFrom(null);
         }
     }
 
@@ -81,9 +113,9 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         selected.clear();
         for (int i = 0; i < n; i++) {
             int tag = buffer.getInt();
-            T type = of.get(tag);
-            selected.add(tag);
-            ((Serializable)values.get(type)).deserialize(buffer);
+            int idx = mapping.idxByTag(tag);
+            selected.add(idx);
+            ((Serializable)values.get(idx)).deserialize(buffer);
         }
     }
 
@@ -95,22 +127,24 @@ public class MutableSet<T extends Choice<?>> implements Mutable<MutableSet<T>>, 
         }
         TIntIterator iterator = selected.iterator();
         while (iterator.hasNext()) {
-            int tag = iterator.next();
+            int idx = iterator.next();
+            int tag = mapping.tagByIdx(idx);
             buffer.putInt(tag);
-            T type = of.get(tag);
-            ((Serializable)values.get(type)).serialize(buffer);
+            ((Serializable)values.get(idx)).serialize(buffer);
         }
     }
 
     public void iterateActive(Consumer<T> consumer) {
-        selected.forEach(tag -> {
-            consumer.accept(of.get(tag));
+        selected.forEach(idx -> {
+            consumer.accept(mapping.choiceTypeByIdx(idx));
             return true;
         });
 
     }
 
     public void iterateAll(Consumer<T> consumer) {
-        of.forEach((k, v) -> consumer.accept(v));
+        for(int i = 0; i < mapping.nElements(); i++) {
+            consumer.accept(mapping.choiceTypeByIdx(i));
+        }
     }
 }

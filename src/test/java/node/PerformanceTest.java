@@ -4,20 +4,15 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.Gossip;
-import node.GossipFactoryImpl;
-import node.Message;
-import node.MessageType;
-import node.counter.AckCountNodesMessage;
-import node.counter.CountNodesActor;
-import node.counter.CountNodesMessage;
+import node.counter.CountNodesTypes;
 import node.datagram.DatagramGossipNode;
 import node.datagram.DatagramGossipNodeShared;
+import node.factory.GossipFactoryImpl;
 import node.ledger.ActorContext;
 import node.ledger.Ledger;
 import node.ledger.UberActor;
 import node.pong.PongActor;
-import node.pong.PongMessage;
+import node.pong.PongTypes;
 import org.junit.Before;
 import org.junit.Test;
 import util.MappedQueue;
@@ -36,14 +31,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static node.factory.GossipTypes.*;
 
 public class PerformanceTest {
 
     public static final MessageType<TestMessage> TEST_MESSAGE = new MessageType<>(
-            5,
             "TEST",
-            TestMessage.class,
-            TestMessage::new);
+            TestMessage.class
+    );
 
     public static final int N_NODES = 100;
     private static final int N_MESSAGES = 100;
@@ -56,16 +51,16 @@ public class PerformanceTest {
 
     @Before
     public void setUp() throws Exception {
-        factory = new GossipFactoryImpl();
-
-        factory.register(TEST_MESSAGE);
-
-        factory.register(CountNodesActor.TYPE);
-        factory.register(CountNodesMessage.TYPE);
-        factory.register(AckCountNodesMessage.TYPE);
-
-        factory.register(PongMessage.TYPE);
-        factory.register(PongActor.TYPE);
+        factory = new GossipFactoryImpl(
+                eventRegistry(),
+                messageRegistry()
+                        .merge(0x100, CountNodesTypes.messageRegistry())
+                        .merge(0x200, PongTypes.messageRegistry())
+                        .register(0x300, TEST_MESSAGE, TestMessage::new),
+                headersRegistry(),
+                actorRegistry()
+                        .merge(0x100, CountNodesTypes.actorRegistry())
+                        .merge(0x200, PongTypes.actorRegistry()));
 
         shared = new DatagramGossipNodeShared(
                 16 * 1024,
@@ -95,6 +90,7 @@ public class PerformanceTest {
 //                .get();
         SECONDS.sleep(5);
     }
+
 
     @Test
     public void send1Mesage() throws Exception {

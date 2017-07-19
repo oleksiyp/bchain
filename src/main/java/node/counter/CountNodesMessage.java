@@ -9,12 +9,11 @@ import java.nio.ByteBuffer;
 
 @ToString
 public class CountNodesMessage implements Mutable<CountNodesMessage>, Serializable {
-    public static final MessageType<CountNodesMessage> TYPE =
+    public static final MessageType<CountNodesMessage> COUNT_NODES_MESSAGE_MESSAGE =
             new MessageType<>(
-                    60,
                     "COUNT_NODES_MESSAGE",
-                    CountNodesMessage.class,
-                    CountNodesMessage::new);
+                    CountNodesMessage.class
+            );
 
     @Override
     public void copyFrom(CountNodesMessage obj) {

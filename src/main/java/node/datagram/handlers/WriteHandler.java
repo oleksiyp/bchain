@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
-import static node.datagram.event.EventType.WRITE_EVENT;
+import static node.datagram.event.WriteEvent.TYPE;
 
 @Slf4j
 public class WriteHandler implements EventHandler<Event> {
@@ -21,13 +21,13 @@ public class WriteHandler implements EventHandler<Event> {
 
     @Override
     public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
-        if (event.isSubEventActive(WRITE_EVENT)) {
+        if (event.isSubEventActive(TYPE)) {
             onWriteEvent(event);
         }
     }
 
     private void onWriteEvent(Event event) throws IOException {
-        WriteEvent writeEvent = event.getSubEvent(WRITE_EVENT);
+        WriteEvent writeEvent = event.getSubEvent(TYPE);
         buffer.clear();
         writeEvent.getMessage().serialize(buffer);
         buffer.flip();

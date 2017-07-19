@@ -2,6 +2,7 @@ package node;
 
 import lombok.Getter;
 import lombok.Setter;
+import node.factory.GossipFactory;
 import util.Serializable;
 import util.mutable.Mutable;
 import util.mutable.MutableSet;
@@ -27,8 +28,8 @@ public class Message implements Mutable<Message>, Serializable {
         this.origin = factory.createAddress();
         this.receiver = factory.createAddress();
 
-        subType = new MutableUnion<>(factory.getMessageTypes(), factory);
-        headers = new MutableSet<>(factory.getHeaderTypes(), factory);
+        subType = new MutableUnion<>(factory.getMessageTypes());
+        headers = new MutableSet<>(factory.getHeaderTypes());
     }
 
     public <T extends Mutable<T>> Message(GossipFactory factory,

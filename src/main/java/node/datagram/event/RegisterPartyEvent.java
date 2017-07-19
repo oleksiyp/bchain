@@ -4,13 +4,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import node.Address;
-import node.GossipFactory;
+import node.factory.GossipFactory;
 import util.mutable.Mutable;
 
 @Getter
 @Setter
 @ToString
 public class RegisterPartyEvent implements Mutable<RegisterPartyEvent> {
+    public static final EventType<RegisterPartyEvent> REGISTER_PARTY_EVENT = new EventType<>(
+            "REGISTER_PARTY_EVENT",
+            RegisterPartyEvent.class
+    );
     private final Address address;
 
     public RegisterPartyEvent(GossipFactory factory) {

@@ -2,7 +2,7 @@ package node.datagram.event;
 
 import lombok.Getter;
 import lombok.Setter;
-import node.GossipFactory;
+import node.factory.GossipFactory;
 import node.datagram.Party;
 import node.datagram.DatagramGossipNodeShared;
 import util.mutable.Mutable;
@@ -17,9 +17,7 @@ public class Event implements Mutable<Event> {
     private final MutableUnion<EventType<?>> subEvent;
 
     public Event(GossipFactory factory) {
-        subEvent = new MutableUnion<>(
-                factory.getEventTypes(),
-                factory);
+        subEvent = new MutableUnion<>(factory.getEventTypes());
     }
 
     @Override

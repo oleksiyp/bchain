@@ -15,12 +15,10 @@ import java.nio.ByteBuffer;
 @EqualsAndHashCode
 @ToString(includeFieldNames = false)
 public class AckCountNodesMessage implements Mutable<AckCountNodesMessage>, Serializable {
-    public static final MessageType<AckCountNodesMessage> TYPE =
+    public static final MessageType<AckCountNodesMessage> ACK_COUNT_NODES_MESSAGE =
             new MessageType<>(
-                    61,
                     "ACK_COUNT_NODES_MESSAGE",
-                    AckCountNodesMessage.class,
-                    AckCountNodesMessage::new);
+                    AckCountNodesMessage.class);
 
     private long count;
 

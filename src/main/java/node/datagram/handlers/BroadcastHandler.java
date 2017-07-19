@@ -15,8 +15,6 @@ import node.datagram.DatagramGossipNodeShared;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import static node.datagram.event.EventType.*;
-
 public class BroadcastHandler implements EventHandler<Event> {
     private final Publisher publisher;
 
@@ -33,8 +31,8 @@ public class BroadcastHandler implements EventHandler<Event> {
         GossipNode gossipNode = party.getGossipNode();
         DatagramGossipNodeShared shared = event.getShared();
 
-        if (event.isSubEventActive(SEND_EVENT)) {
-            SendEvent sendEvent = event.getSubEvent(SEND_EVENT);
+        if (event.isSubEventActive(SendEvent.SEND_EVENT)) {
+            SendEvent sendEvent = event.getSubEvent(SendEvent.SEND_EVENT);
 
             Message message = sendEvent.getMessage();
 
@@ -54,8 +52,8 @@ public class BroadcastHandler implements EventHandler<Event> {
             shared.getWriteDispatcher().dispatch(n, publisher);
             publisher.init(null, null, null, null);
 
-        } else if (event.isSubEventActive(REGISTER_PARTY_EVENT)) {
-            RegisterPartyEvent registerPartyEvent = event.getSubEvent(REGISTER_PARTY_EVENT);
+        } else if (event.isSubEventActive(RegisterPartyEvent.REGISTER_PARTY_EVENT)) {
+            RegisterPartyEvent registerPartyEvent = event.getSubEvent(RegisterPartyEvent.REGISTER_PARTY_EVENT);
 
             gossipNode.getRemoteParties()
                     .register(registerPartyEvent.getAddress());
@@ -96,7 +94,7 @@ public class BroadcastHandler implements EventHandler<Event> {
             event.setSelf(party);
             event.setShared(shared);
 
-            WriteEvent writeEvent = event.getSubEvent().activate(WRITE_EVENT);
+            WriteEvent writeEvent = event.getSubEvent().activate(WriteEvent.TYPE);
 
             writeEvent.setTo(next);
             Message message = writeEvent.getMessage();

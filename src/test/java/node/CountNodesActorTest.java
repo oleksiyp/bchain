@@ -1,18 +1,16 @@
 package node;
 
-import node.Gossip;
-import node.GossipFactoryImpl;
-import node.Message;
+import node.counter.CountNodesTypes;
+import node.factory.GossipFactoryImpl;
 import node.counter.AckCountNodesMessage;
 import node.counter.CountNodesMessage;
-import node.counter.CountNodesActor;
 import node.datagram.DatagramGossipNode;
 import node.datagram.DatagramGossipNodeShared;
 import node.ledger.UberActor;
 import node.ledger.ActorContext;
 import node.ledger.Ledger;
 import node.pong.PongActor;
-import node.pong.PongMessage;
+import node.pong.PongTypes;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +30,7 @@ import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.allOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static node.factory.GossipTypes.*;
 
 public class CountNodesActorTest {
 
@@ -48,14 +47,15 @@ public class CountNodesActorTest {
 
     @Before
     public void setUp() throws Exception {
-        factory = new GossipFactoryImpl();
-
-        factory.register(CountNodesActor.TYPE);
-        factory.register(CountNodesMessage.TYPE);
-        factory.register(AckCountNodesMessage.TYPE);
-
-        factory.register(PongMessage.TYPE);
-        factory.register(PongActor.TYPE);
+        factory = new GossipFactoryImpl(
+                eventRegistry(),
+                messageRegistry()
+                        .merge(0x100, CountNodesTypes.messageRegistry())
+                        .merge(0x200, PongTypes.messageRegistry()),
+                headersRegistry(),
+                actorRegistry()
+                        .merge(0x100, CountNodesTypes.actorRegistry())
+                        .merge(0x200, PongTypes.actorRegistry()));
 
         shared = new DatagramGossipNodeShared(
                 16 * 1024,
@@ -95,13 +95,13 @@ public class CountNodesActorTest {
         AtomicLong actual = new AtomicLong();
         CountDownLatch latch = new CountDownLatch(1);
 
-        node3.listen(AckCountNodesMessage.TYPE, (msg, ackCount) -> {
+        node3.listen(AckCountNodesMessage.ACK_COUNT_NODES_MESSAGE, (msg, ackCount) -> {
             actual.set(ackCount.getCount());
             latch.countDown();
         });
 
         node3.send(new Message(factory,
-                CountNodesMessage.TYPE));
+                CountNodesMessage.COUNT_NODES_MESSAGE_MESSAGE));
 
         latch.await();
         Assert.assertEquals(4, actual.get());

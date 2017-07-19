@@ -5,26 +5,21 @@ import node.Message;
 import java.util.function.BiConsumer;
 
 public interface Actor {
-    NoBeheviour NO_BEHEVIOUR = new NoBeheviour();
+    BiConsumer<ActorContext, Message> NO_BEHAVIOUR = (ctx, msg) -> {};
 
     default BiConsumer<ActorContext, Message> initBehaviour() {
-        return NO_BEHEVIOUR;
+        return NO_BEHAVIOUR;
     }
 
     default BiConsumer<ActorContext, Message> duplicateBehaviour() {
-        return NO_BEHEVIOUR;
+        return NO_BEHAVIOUR;
     }
 
     default BiConsumer<ActorContext, Message> selfBehaviour() {
-        return NO_BEHEVIOUR;
+        return NO_BEHAVIOUR;
     }
 
     BiConsumer<ActorContext, Message> behaviour();
 
 }
 
-class NoBeheviour implements BiConsumer<ActorContext, Message> {
-    @Override
-    public void accept(ActorContext actorContext, Message message) {
-    }
-}

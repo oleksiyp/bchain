@@ -3,7 +3,7 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.GossipFactory;
+import node.factory.GossipFactory;
 import node.Message;
 import util.mutable.Mutable;
 
@@ -11,6 +11,10 @@ import util.mutable.Mutable;
 @Setter
 @ToString
 public class SendEvent implements Mutable<SendEvent> {
+    public static final EventType<SendEvent> SEND_EVENT = new EventType<>(
+            "SEND_EVENT",
+            SendEvent.class
+    );
     private final Message message;
 
     public SendEvent(GossipFactory factory) {

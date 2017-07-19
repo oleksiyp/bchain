@@ -15,10 +15,9 @@ import java.util.function.BiConsumer;
 public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     public static final ActorType<CountNodesActor> TYPE =
             new ActorType<>(
-                    60,
                     "COUNT_NODES_ACTOR",
-                    CountNodesActor.class,
-                    CountNodesActor::new);
+                    CountNodesActor.class
+            );
 
     private int parties;
     private int acks;
@@ -40,7 +39,7 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
                                long count) {
         Message ackMessage = ctx.newMessage();
 
-        ackMessage.activate(AckCountNodesMessage.TYPE)
+        ackMessage.activate(AckCountNodesMessage.ACK_COUNT_NODES_MESSAGE)
                 .setCount(count);
 
         ackMessage
@@ -58,7 +57,7 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     public BiConsumer<ActorContext, Message> initBehaviour() {
         return (ctx, message) -> {
             GossipNode gossipNode = ctx.getGossipNode();
-            if (message.instanceOf(CountNodesMessage.TYPE)) {
+            if (message.instanceOf(CountNodesMessage.COUNT_NODES_MESSAGE_MESSAGE)) {
 
                 RemoteParties remoteParties = gossipNode.getRemoteParties();
                 List<Party> list = remoteParties.getList();
@@ -85,9 +84,9 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     @Override
     public BiConsumer<ActorContext, Message> behaviour() {
         return (ctx, message) -> {
-            if (message.instanceOf(AckCountNodesMessage.TYPE)) {
+            if (message.instanceOf(AckCountNodesMessage.ACK_COUNT_NODES_MESSAGE)) {
                 acks++;
-                count += message.castTo(AckCountNodesMessage.TYPE).getCount();
+                count += message.castTo(AckCountNodesMessage.ACK_COUNT_NODES_MESSAGE).getCount();
 
                 if (parties == acks) {
                     reply(ctx);
@@ -114,7 +113,7 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     public BiConsumer<ActorContext, Message> duplicateBehaviour() {
         return (ctx, message) -> {
             GossipNode gossipNode = ctx.getGossipNode();
-            if (message.instanceOf(CountNodesMessage.TYPE)) {
+            if (message.instanceOf(CountNodesMessage.COUNT_NODES_MESSAGE_MESSAGE)) {
                 Message ackMessage = ackMessage(ctx,
                         message.getSender(),
                         0);

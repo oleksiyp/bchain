@@ -3,7 +3,7 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node.GossipFactory;
+import node.factory.GossipFactory;
 import node.Message;
 import node.datagram.Party;
 import util.mutable.Mutable;
@@ -12,6 +12,10 @@ import util.mutable.Mutable;
 @Setter
 @ToString
 public class WriteEvent implements Mutable<WriteEvent> {
+    public static final EventType<WriteEvent> TYPE = new EventType<>(
+            "WRITE_EVENT",
+            WriteEvent.class
+    );
     private final Message message;
     private Party to;
 

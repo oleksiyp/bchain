@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 
-import static node.datagram.event.EventType.READ_EVENT;
+import static node.datagram.event.ReadEvent.READ_EVENT;
 
 @Slf4j
 public class SelectorTask implements Runnable {
