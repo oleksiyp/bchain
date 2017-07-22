@@ -12,13 +12,11 @@ import java.util.function.Supplier;
 
 public class Registry<F> {
     private final Map<Integer, ChoiceType<?>> choiceTypes;
-    private final Map<Integer, Supplier<Mutable<?>>> constructors;
+    private final Map<Integer, Function<F, Mutable<?>>> constructors;
 
     private RegistryMapping<?> savedMapping;
     private Class<?> savedClass;
-
-    @Getter@Setter
-    private F constructorParam;
+    private F savedParam;
 
     public Registry() {
         choiceTypes = new IntObjectHashMap<>();
@@ -29,7 +27,7 @@ public class Registry<F> {
             int tag,
             ChoiceType<M> type,
             Supplier<M> constructor) {
-        reg(tag, type, (Supplier<Mutable<?>>) constructor);
+        register(tag, type, (obj) -> constructor.get());
         return this;
     }
 
@@ -37,13 +35,13 @@ public class Registry<F> {
             int tag,
             ChoiceType<M> type,
             Function<F, M> constructor) {
-        register(tag, type, () -> constructor.apply(constructorParam));
+        reg(tag, type, (Function<F, Mutable<?>>) constructor);
         return this;
     }
 
     private void reg(int tag,
             ChoiceType<?> type,
-            Supplier<Mutable<?>> constructor) {
+            Function<F, Mutable<?>> constructor) {
         if (choiceTypes.containsKey(tag) ||
                 choiceTypes.put(tag, type) != null) {
             throw new RuntimeException("Tag " + tag + " already exist: " + type);
@@ -67,20 +65,24 @@ public class Registry<F> {
         savedClass = null;
     }
 
-    public <T extends ChoiceType<?>, R extends T> RegistryMapping<R> mapping(Class<T> clazz) {
-        if (savedClass == clazz) {
+    public <T extends ChoiceType<?>, R extends T> RegistryMapping<R> mapping(F constructorParam, Class<T> clazz) {
+        if (savedClass == clazz && savedParam == constructorParam ) {
             return (RegistryMapping<R>) savedMapping;
         }
+
+        Map<Integer, Supplier<Mutable<?>>> constructors = new IntObjectHashMap<>();
+
+        this.constructors.forEach((tag, constructor) ->
+                constructors.put(tag, () ->
+                        constructor.apply(constructorParam)));
 
         RegistryMapping<R> res = new RegistryMapping<>(choiceTypes, constructors, (Class<R>) clazz);
 
         savedMapping = res;
         savedClass = clazz;
+        savedParam = constructorParam;
 
         return res;
     }
 
-    public static <T> Registry<T> emptyRegistry() {
-        return new Registry<>();
-    }
 }

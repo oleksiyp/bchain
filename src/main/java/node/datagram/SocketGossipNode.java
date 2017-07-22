@@ -2,7 +2,6 @@ package node.datagram;
 
 import lombok.extern.slf4j.Slf4j;
 import node.*;
-import node.datagram.event.RegisterPartyEvent;
 import node.factory.GossipFactory;
 import node.ledger.Ledger;
 import node.datagram.event.RegisterListenerEvent;
@@ -10,15 +9,18 @@ import node.datagram.event.SendEvent;
 import node.pong.PingMessage;
 import util.Cancelable;
 import util.mutable.Mutable;
+import util.mutable.MutableBlockingQueue;
 
 import java.io.IOError;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.channels.DatagramChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,8 +31,8 @@ import static node.datagram.event.RegisterPartyEvent.REGISTER_PARTY_EVENT;
 import static node.datagram.event.SendEvent.SEND_EVENT;
 
 @Slf4j
-public class DatagramGossipNode implements GossipNode {
-    private final DatagramGossipNodeShared shared;
+public class SocketGossipNode implements GossipNode {
+    private final SocketGossipNodeShared shared;
     private final Map<MessageType<?>, List<Consumer<Message>>> listeners;
 
     private Address publicAddress;
@@ -41,8 +43,8 @@ public class DatagramGossipNode implements GossipNode {
     private RemoteParties remoteParties;
     private Supplier<Long> idGenerator;
 
-    public DatagramGossipNode(
-            DatagramGossipNodeShared shared,
+    public SocketGossipNode(
+            SocketGossipNodeShared shared,
             InetAddress publicAddress,
             InetAddress listenAddress,
             Supplier<Integer> portRng,
@@ -57,10 +59,10 @@ public class DatagramGossipNode implements GossipNode {
             Address address = getFactory().createAddress();
             address.copyFromObj(new InetSocketAddress(listenAddress, port));
             try {
-                DatagramChannel channel = DatagramChannel.open();
-                channel.configureBlocking(false);
+                ServerSocketChannel channel = ServerSocketChannel.open();
                 channel.bind(address.toInetSocketAddress());
-                return new Party(address, this, channel);
+                channel.configureBlocking(false);
+                return new ServerSocketParty(address, this, channel);
             } catch (IOException e) {
                 throw new IOError(e);
             }
@@ -100,8 +102,22 @@ public class DatagramGossipNode implements GossipNode {
         return publicAddress;
     }
 
+    static AtomicInteger cnt = new AtomicInteger();
     @Override
     public void join(Address address) {
+        Party party;
+        try {
+            SocketChannel channel = SocketChannel.open();
+            channel.connect(address.toInetSocketAddress());
+            channel.configureBlocking(false);
+            System.out.println("join " + cnt.incrementAndGet());
+            party = new SocketParty(address, this, channel,
+                    getFactory().createWriteQueue());
+        } catch (IOException ex) {
+            throw new RuntimeException("connect", ex);
+        }
+
+
         log.info("Joining {} to {}", selfParty, address);
         shared
                 .getReadProcessDispatcher()
@@ -109,16 +125,14 @@ public class DatagramGossipNode implements GossipNode {
                     event.setShared(shared);
                     event.setSelf(selfParty);
                     if (i == 0) {
-                        event.setSelf(selfParty);
-                        event
-                                .activateSubEvent(REGISTER_PARTY_EVENT)
-                                .getAddress()
-                                .copyFrom(address);
+                        event.activateSubEvent(REGISTER_PARTY_EVENT)
+                                .setParty(party);
                     } else if (i == 1) {
                         SendEvent sendEvent = event.activateSubEvent(SEND_EVENT);
                         Message message = sendEvent.getMessage();
                         initMessageForSend(message);
-                        message.activate(PingMessage.TYPE);
+                        message.activate(PingMessage.TYPE)
+                                .setValue(cnt.get());
                         message.getReceiver().copyFrom(address);
                     }
                 });

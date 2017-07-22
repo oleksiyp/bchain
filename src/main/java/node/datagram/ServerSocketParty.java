@@ -4,17 +4,19 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import node.Address;
 import node.GossipNode;
+import node.Party;
 
-import java.nio.channels.DatagramChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 @Getter
 @EqualsAndHashCode(of = "address")
-public class Party {
+public class ServerSocketParty implements Party {
     private final GossipNode gossipNode;
     private final Address address;
-    private final DatagramChannel channel;
+    private final ServerSocketChannel channel;
 
-    public Party(Address address, GossipNode gossipNode, DatagramChannel channel) {
+    public ServerSocketParty(Address address, GossipNode gossipNode, ServerSocketChannel channel) {
         this.address = gossipNode.getFactory().createAddress();
         this.address.copyFrom(address);
         this.channel = channel;
@@ -26,6 +28,6 @@ public class Party {
 
     @Override
     public String toString() {
-        return address.toString();
+        return "SERVER:" + address.toString();
     }
 }

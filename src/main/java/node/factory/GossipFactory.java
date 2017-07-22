@@ -7,6 +7,7 @@ import node.MessageType;
 import node.datagram.event.EventType;
 import node.ledger.ActorType;
 import node.ledger.UberActor;
+import util.mutable.MutableBlockingQueue;
 
 public interface GossipFactory {
     Message createMessage();
@@ -14,6 +15,8 @@ public interface GossipFactory {
     Address createAddress();
 
     UberActor createUberActor();
+
+    MutableBlockingQueue<Message> createWriteQueue();
 
     RegistryMapping<EventType<?>>  getEventTypes();
 

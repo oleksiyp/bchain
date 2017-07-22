@@ -4,6 +4,7 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import node.Party;
 import node.factory.GossipFactory;
 import node.datagram.event.Event;
 import node.datagram.handlers.*;
@@ -16,7 +17,7 @@ import java.nio.channels.Selector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-public class DatagramGossipNodeShared implements Cancelable {
+public class SocketGossipNodeShared implements Cancelable {
     private final Selector selector;
     private final Disruptor<Event> readProcessDisruptor;
     private final Disruptor<Event> writeDisruptor;
@@ -27,9 +28,9 @@ public class DatagramGossipNodeShared implements Cancelable {
     private final GossipFactory factory;
     private final Thread selectorThread;
 
-    public DatagramGossipNodeShared(int ringBufferSize,
-                                    int writeBufSize,
-                                    GossipFactory factory) throws IOException {
+    public SocketGossipNodeShared(int ringBufferSize,
+                                  int writeBufSize,
+                                  GossipFactory factory) throws IOException {
         this.factory = factory;
         selector = Selector.open();
 
