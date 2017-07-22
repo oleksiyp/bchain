@@ -4,7 +4,7 @@ import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
 import node.Message;
 import node.MessageType;
-import node.datagram.Party;
+import node.Party;
 import node.datagram.event.Event;
 import node.datagram.event.RegisterListenerEvent;
 import node.datagram.event.SendEvent;
@@ -24,12 +24,13 @@ public class MessageHandler implements EventHandler<Event> {
     public void onEvent(Event event,
                         long sequence,
                         boolean endOfBatch) throws Exception {
-        Map<MessageType<?>, List<Consumer<Message>>> listeners = event.getSelf().getGossipNode().getListeners();
 
         if (event.isSubEventActive(SEND_EVENT)) {
+            Map<MessageType<?>, List<Consumer<Message>>> listeners = event.getSelf().getGossipNode().getListeners();
             onSendEvent(event.getSelf(), event.getSubEvent(SEND_EVENT), listeners);
 
         } else if (event.isSubEventActive(REGISTER_LISTENER_EVENT)) {
+            Map<MessageType<?>, List<Consumer<Message>>> listeners = event.getSelf().getGossipNode().getListeners();
             onRegisterListener(event.getSelf(), event.getSubEvent(REGISTER_LISTENER_EVENT), listeners);
         }
     }
@@ -38,7 +39,7 @@ public class MessageHandler implements EventHandler<Event> {
         Message message = sendEvent.getMessage();
         MutableUnion<MessageType<?>> subType = message.getSubType();
 
-        MessageType<?> messageType = subType.activeChoice();
+        MessageType<?> messageType = subType.activeType();
         if (messageType == null) {
             log.trace("Empty message type in {}. Self={}", message, self);
             return;

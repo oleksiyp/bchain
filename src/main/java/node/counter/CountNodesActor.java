@@ -2,7 +2,7 @@ package node.counter;
 
 import lombok.ToString;
 import node.*;
-import node.datagram.*;
+import node.factory.GossipFactory;
 import node.ledger.Actor;
 import node.ledger.ActorContext;
 import node.ledger.ActorType;
@@ -24,8 +24,8 @@ public class CountNodesActor implements Actor, Mutable<CountNodesActor> {
     private long count;
     private final Address sender;
 
-    public CountNodesActor() {
-        sender = new Address();
+    public CountNodesActor(GossipFactory factory) {
+        sender = factory.createAddress();
     }
 
 

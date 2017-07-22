@@ -1,16 +1,13 @@
 package node.datagram.handlers;
 
 import com.lmax.disruptor.EventHandler;
-import node.Address;
-import node.GossipNode;
-import node.Message;
-import node.RemoteParties;
+import node.*;
 import node.datagram.*;
 import node.datagram.event.Event;
 import node.datagram.event.RegisterPartyEvent;
 import node.datagram.event.SendEvent;
 import node.datagram.event.WriteEvent;
-import node.datagram.DatagramGossipNodeShared;
+import node.datagram.SocketGossipNodeShared;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -27,17 +24,18 @@ public class BroadcastHandler implements EventHandler<Event> {
                         long sequence,
                         boolean endOfBatch) throws Exception {
 
-        Party party = event.getSelf();
-        GossipNode gossipNode = party.getGossipNode();
-        DatagramGossipNodeShared shared = event.getShared();
 
         if (event.isSubEventActive(SendEvent.SEND_EVENT)) {
+            Party party = event.getSelf();
+            GossipNode gossipNode = party.getGossipNode();
+            SocketGossipNodeShared shared = event.getShared();
+
             SendEvent sendEvent = event.getSubEvent(SendEvent.SEND_EVENT);
 
             Message message = sendEvent.getMessage();
 
             RemoteParties parties = gossipNode.getRemoteParties();
-            parties.register(message.getSender());
+//            parties.register(message.getSender());
             List<Party> list = parties.getList();
 
             if (message.getReceiver().isSet()) {
@@ -53,10 +51,18 @@ public class BroadcastHandler implements EventHandler<Event> {
             publisher.init(null, null, null, null);
 
         } else if (event.isSubEventActive(RegisterPartyEvent.REGISTER_PARTY_EVENT)) {
+            Party party = event.getSelf();
+            GossipNode gossipNode = party.getGossipNode();
+            SocketGossipNodeShared shared = event.getShared();
+
             RegisterPartyEvent registerPartyEvent = event.getSubEvent(RegisterPartyEvent.REGISTER_PARTY_EVENT);
 
+            Party partyToRegister = registerPartyEvent.getParty();
+
             gossipNode.getRemoteParties()
-                    .register(registerPartyEvent.getAddress());
+                        .register(partyToRegister);
+
+            shared.getPartyRegistrar().accept(partyToRegister);
         }
     }
 
@@ -65,10 +71,10 @@ public class BroadcastHandler implements EventHandler<Event> {
         private GossipNode gossipNode;
         private SendEvent sendEvent;
         private Party party;
-        private DatagramGossipNodeShared shared;
+        private SocketGossipNodeShared shared;
         private List<Party> partyList;
 
-        private void init(GossipNode gossipNode, SendEvent sendEvent, Party party, DatagramGossipNodeShared shared) {
+        private void init(GossipNode gossipNode, SendEvent sendEvent, Party party, SocketGossipNodeShared shared) {
             it = 0;
             this.party = party;
             this.shared = shared;

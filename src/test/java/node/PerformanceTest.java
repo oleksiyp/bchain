@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import node.counter.CountNodesTypes;
-import node.datagram.DatagramGossipNode;
-import node.datagram.DatagramGossipNodeShared;
+import node.datagram.SocketGossipNode;
+import node.datagram.SocketGossipNodeShared;
 import node.factory.GossipFactoryImpl;
 import node.ledger.ActorContext;
 import node.ledger.Ledger;
@@ -41,11 +41,11 @@ public class PerformanceTest {
     );
 
     public static final int N_NODES = 100;
-    private static final int N_MESSAGES = 100;
+    private static final int N_MESSAGES = 100000;
 
     private Supplier<Long> idGenerator;
     private Supplier<Integer> portGenerator;
-    private DatagramGossipNodeShared shared;
+    private SocketGossipNodeShared shared;
     private GossipFactoryImpl factory;
     private List<Gossip> gossips;
 
@@ -60,9 +60,9 @@ public class PerformanceTest {
                 headersRegistry(),
                 actorRegistry()
                         .merge(0x100, CountNodesTypes.actorRegistry())
-                        .merge(0x200, PongTypes.actorRegistry()));
+                        .merge(0x200, PongTypes.actorRegistry()), 4);
 
-        shared = new DatagramGossipNodeShared(
+        shared = new SocketGossipNodeShared(
                 16 * 1024,
                 1024,
                 factory);
@@ -75,20 +75,20 @@ public class PerformanceTest {
 
         List<CompletableFuture<?>> futures = new ArrayList<>();
         gossips = new ArrayList<>();
+        AtomicInteger cnt = new AtomicInteger();
         for (int i = 0; i < N_NODES; i++) {
-            DatagramGossipNode node = createNode(shared);
-            gossips.add(node);
-            if (gossips.size() <= 1) {
+            SocketGossipNode node = createNode(shared);
+            if (gossips.size() < 1) {
+                gossips.add(node);
                 continue;
             }
             int j = rnd.nextInt(gossips.size());
             futures.add(PongActor.join(node, gossips.get(j).address()));
+            gossips.add(node);
+            System.out.println("add " + cnt.incrementAndGet());
         }
 
-
-//        allOf(futures.toArray(new CompletableFuture[0]))
-//                .get();
-        SECONDS.sleep(5);
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
     }
 
 
@@ -97,12 +97,9 @@ public class PerformanceTest {
 
         CountDownLatch latch = new CountDownLatch(N_NODES * N_MESSAGES);
 
-        gossips.forEach(node -> {
-            node.listen(TEST_MESSAGE, (msg, ackCount) -> {
-                System.out.println(latch);
-                latch.countDown();
-            });
-        });
+        gossips.forEach(node ->
+                node.listen(TEST_MESSAGE, (msg, testMessage) ->
+                        latch.countDown()));
 
         for (int i = 0; i < N_MESSAGES; i++) {
             int finalI = i;
@@ -114,7 +111,7 @@ public class PerformanceTest {
         latch.await();
     }
 
-    private DatagramGossipNode createNode(DatagramGossipNodeShared shared) throws IOException {
+    private SocketGossipNode createNode(SocketGossipNodeShared shared) throws IOException {
         MappedQueue<UberActor> mappedQueue = new MappedQueue<>(
                 1024,
                 SECONDS.toMillis(60),
@@ -123,7 +120,7 @@ public class PerformanceTest {
 
         ActorContext context = new ActorContext();
 
-        return new DatagramGossipNode(
+        return new SocketGossipNode(
                 shared,
                 Inet4Address.getByName("localhost"),
                 Inet4Address.getByName("localhost"),

@@ -90,11 +90,11 @@ public class Message implements Mutable<Message>, Serializable {
     }
 
     public boolean instanceOf(MessageType<?> MessageType) {
-        return subType.isActive(MessageType);
+        return subType.instanceOf(MessageType);
     }
 
     public <T extends Mutable<T>> T castTo(MessageType<T> messageType) {
-        return subType.get(messageType);
+        return subType.castTo(messageType);
     }
 
     public <T extends Mutable<T>> T activate(MessageType<T> messageType) {

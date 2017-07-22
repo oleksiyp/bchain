@@ -4,8 +4,8 @@ import node.counter.CountNodesTypes;
 import node.factory.GossipFactoryImpl;
 import node.counter.AckCountNodesMessage;
 import node.counter.CountNodesMessage;
-import node.datagram.DatagramGossipNode;
-import node.datagram.DatagramGossipNodeShared;
+import node.datagram.SocketGossipNode;
+import node.datagram.SocketGossipNodeShared;
 import node.ledger.UberActor;
 import node.ledger.ActorContext;
 import node.ledger.Ledger;
@@ -41,7 +41,7 @@ public class CountNodesActorTest {
 
     private Supplier<Long> idGenerator;
     private Supplier<Integer> portGenerator;
-    private DatagramGossipNodeShared shared;
+    private SocketGossipNodeShared shared;
     private GossipFactoryImpl factory;
     private List<Gossip> gossips;
 
@@ -55,9 +55,9 @@ public class CountNodesActorTest {
                 headersRegistry(),
                 actorRegistry()
                         .merge(0x100, CountNodesTypes.actorRegistry())
-                        .merge(0x200, PongTypes.actorRegistry()));
+                        .merge(0x200, PongTypes.actorRegistry()), 4);
 
-        shared = new DatagramGossipNodeShared(
+        shared = new SocketGossipNodeShared(
                 16 * 1024,
                 1024,
                 factory);
@@ -108,7 +108,7 @@ public class CountNodesActorTest {
 
     }
 
-    private DatagramGossipNode createNode(DatagramGossipNodeShared shared) throws IOException {
+    private SocketGossipNode createNode(SocketGossipNodeShared shared) throws IOException {
         MappedQueue<UberActor> mappedQueue = new MappedQueue<>(
                 1024,
                 SECONDS.toMillis(60),
@@ -116,7 +116,7 @@ public class CountNodesActorTest {
                 Mutable::clear);
 
         ActorContext context = new ActorContext();
-        DatagramGossipNode node = new DatagramGossipNode(
+        SocketGossipNode node = new SocketGossipNode(
                 shared,
                 Inet4Address.getByName("localhost"),
                 Inet4Address.getByName("localhost"),

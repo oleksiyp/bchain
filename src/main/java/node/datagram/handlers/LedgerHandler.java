@@ -18,7 +18,7 @@ public class LedgerHandler implements EventHandler<Event> {
                 log.trace("Message already in {} ledger. Clearing event", event.getSelf());
                 event.getSubEvent().clear();
             }
-            if (sendEvent.getMessage().getSubType().activeChoice() == null) {
+            if (sendEvent.getMessage().getSubType().activeType() == null) {
                 log.trace("{} message is cleared. Clearing event", event.getSelf());
                 event.getSubEvent().clear();
             }

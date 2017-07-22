@@ -3,9 +3,9 @@ package node.datagram.event;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import node.Party;
 import node.factory.GossipFactory;
 import node.Message;
-import node.datagram.Party;
 import util.mutable.Mutable;
 
 @Getter

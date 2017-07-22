@@ -18,8 +18,7 @@ public class PongMessage implements Mutable<PongMessage>, Serializable {
     public static final MessageType<PongMessage> TYPE =
             new MessageType<>(
                     "PONG_MESSAGE",
-                    PongMessage.class
-            );
+                    PongMessage.class);
 
     @Override
     public void copyFrom(PongMessage obj) {

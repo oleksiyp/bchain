@@ -2,9 +2,9 @@ package node.datagram.event;
 
 import lombok.Getter;
 import lombok.Setter;
+import node.Party;
 import node.factory.GossipFactory;
-import node.datagram.Party;
-import node.datagram.DatagramGossipNodeShared;
+import node.datagram.SocketGossipNodeShared;
 import util.mutable.Mutable;
 import util.mutable.MutableUnion;
 
@@ -12,7 +12,7 @@ import util.mutable.MutableUnion;
 @Getter
 public class Event implements Mutable<Event> {
     private Party self;
-    private DatagramGossipNodeShared shared;
+    private SocketGossipNodeShared shared;
 
     private final MutableUnion<EventType<?>> subEvent;
 
@@ -32,11 +32,11 @@ public class Event implements Mutable<Event> {
     }
 
     public boolean isSubEventActive(EventType<?> eventType) {
-        return getSubEvent().isActive(eventType);
+        return getSubEvent().instanceOf(eventType);
     }
 
     public <T extends Mutable<T>> T getSubEvent(EventType<T> eventType) {
-        return getSubEvent().get(eventType);
+        return getSubEvent().castTo(eventType);
     }
 
     public <T extends Mutable<T>> T activateSubEvent(EventType<T> eventType) {

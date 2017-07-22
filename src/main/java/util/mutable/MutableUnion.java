@@ -50,21 +50,25 @@ public class MutableUnion<T extends ChoiceType<?>> implements Mutable<MutableUni
         return (R) value;
     }
 
-    public T activeChoice() {
+    public T activeType() {
         if (choice == -1) {
             return null;
         }
         return mapping.choiceTypeByIdx(choice);
     }
 
-    public boolean isActive(T choice) {
+    public boolean isActive() {
+        return choice != -1;
+    }
+
+    public boolean instanceOf(T choice) {
         if (this.choice == -1) {
             return false;
         }
         return mapping.choiceTypeByIdx(this.choice) == choice;
     }
 
-    public <C extends ChoiceType<R>, R extends Mutable<R>> R get(C choice) {
+    public <C extends ChoiceType<R>, R extends Mutable<R>> R castTo(C choice) {
         int tag = mapping.tagByChoiceType(choice);
         if (tag == -1) {
             throw new RuntimeException(choice + " not registered in " + mapping);
