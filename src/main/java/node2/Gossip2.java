@@ -26,7 +26,10 @@ public class Gossip2 {
     boolean done = false;
 
     public static void main(String[] args) throws IOException {
+        long start = System.nanoTime();
         new Gossip2().run();
+        long end = System.nanoTime();
+        System.out.printf("%.3f seconds%n", (end - start) / 1e9);
     }
 
     private void run() throws IOException {
@@ -53,7 +56,7 @@ public class Gossip2 {
         }
 
         while (!done) {
-            selector.select();
+            if (selector.select() == 0) continue;
 
             Iterator<SelectionKey> keyIt = selector.selectedKeys().iterator();
 
@@ -98,6 +101,8 @@ public class Gossip2 {
     }
 
     int nMsgs = 0;
+    long nSends = 0;
+    int n = 0;
     private void processMessage(Connection connection, Serializable received) {
         if (received instanceof PingMessage) {
             PingMessage ping = (PingMessage) received;
@@ -117,30 +122,32 @@ public class Gossip2 {
 
             typeMapping.reuse(RandomWalkMessage.TYPE, rwm);
         } else if (received instanceof RandomWalkMessage) {
+            nSends++;
             Connection nextConn = randomConnection(connection.server);
             RandomWalkMessage rwm = (RandomWalkMessage) received;
             long prevT = rwm.getT();
             long nextT = System.nanoTime();
             rwm.setT(nextT);
-
-
+            
             int hops = rwm.hops;
 
-            if (hops < 8000) {
-                hist.recordValue((nextT - prevT) / 1000);
+            if (hops < 3000) {
+                long mks = (nextT - prevT) / 1000;
+                hist.recordValue(mks);
             }
 
             if (hops > 0) {
                 rwm.hops = hops - 1;
                 nextConn.send(received);
             } else {
-                System.out.println("Zero hops " + ++cnt);
+//                System.out.println("Zero hops " + ++cnt);
+                cnt++;
                 if (cnt == nMsgs) {
-                    for (int i = 75; i <= 100; i++) {
+                    for (double i = 90; i <= 100; i += 0.5) {
                         System.out.println(i + "% " + hist.getValueAtPercentile(i));
                     }
-                    System.out.flush();
                     done = true;
+                    System.out.println(nSends + " messages");
                 }
             }
 
@@ -148,8 +155,9 @@ public class Gossip2 {
         }
     }
 
+    int rng = 0;
     private Connection randomConnection(Server server) {
-        int next = rnd.nextInt(server.in.size() + server.out.size());
+        int next = rng++ % (server.in.size() + server.out.size());
         Connection nextConn;
         if (next < server.in.size()) {
             nextConn = server.in.get(next);
@@ -173,7 +181,7 @@ public class Gossip2 {
         }
 
         Connection connection = (Connection) key.attachment();
-        key.interestOps(OP_READ);
+        connection.interested(OP_READ);
 
         PingMessage msg = new PingMessage();
         msg.setPort(connection.portFrom);
@@ -254,6 +262,7 @@ public class Gossip2 {
         private Out out;
         private int maxInMsgSize;
         private int skipNextNBytes;
+        private int ops;
 
         public Connection(Server server, SocketChannel channel, int portFrom, int portTo, SelectionKey key, int maxInMsgSize) {
             this.server = server;
@@ -270,6 +279,7 @@ public class Gossip2 {
             outBuffer = ByteBuffer.allocate(512);
             countOut = new CountOut();
             out = new BufOut(outBuffer);
+            ops = key.interestOps();
         }
 
         public Serializable receive() throws IOException {
@@ -347,9 +357,16 @@ public class Gossip2 {
             outBuffer.flip();
             channel.write(outBuffer);
             if (outBuffer.remaining() == 0) {
-                key.interestOps(key.interestOps() & ~OP_WRITE);
+                interested(ops & ~OP_WRITE);
             }
             outBuffer.compact();
+        }
+
+        public void interested(int newOps) {
+            if (ops != newOps) {
+                ops = newOps;
+                key.interestOps(ops);
+            }
         }
 
         public void send(Serializable msg) {
@@ -367,10 +384,7 @@ public class Gossip2 {
 
             outBuffer.putInt(sizePos, frameEnd - frameStart);
 
-            int ops = key.interestOps();
-            if ((ops & OP_WRITE) == 0) {
-                key.interestOps(ops | OP_WRITE);
-            }
+            interested(ops | OP_WRITE);
         }
 
         private void reallocateOut(int requiredSpace) {

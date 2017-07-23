@@ -3,7 +3,6 @@ package node2.in_out;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import io.netty.util.collection.IntObjectHashMap;
-import util.mutable.Mutable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -12,12 +11,14 @@ import java.util.function.Supplier;
 public class RegistryMapping<T extends ChoiceType<C>, C> {
     private final TIntIntMap tagToIdxs;
     private final int [] idxToTags;
+    int [][] tagIdxCache;
 
     private final List<Supplier<C>> constructors;
     private final List<Pool<C>> pools;
     private final List<T> choiceTypeList;
     private final Map<Integer, T> choiceTypeMap;
     private final Map<T, Integer> reverseChoiceTypeMap;
+    private int nextCacheItem;
 
     public RegistryMapping(Map<Integer, ChoiceType<?>> choiceTypeMap,
                            Map<Integer, Supplier<?>> constructors,
@@ -67,6 +68,12 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
             }
         }
         this.idxToTags = Arrays.copyOf(idxToTags, i);
+
+        tagIdxCache = new int[8][2];
+        for (int j = 0; j < tagIdxCache.length; j++) {
+            tagIdxCache[j][1] = -1;
+        }
+        nextCacheItem = 0;
     }
 
 
@@ -81,10 +88,24 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
     }
 
     public int idxByTag(int tag) {
+        for (int j = 0; j < tagIdxCache.length; j++) {
+            if (tagIdxCache[j][1] != -1 && tagIdxCache[j][0] == tag) {
+                return tagIdxCache[j][1];
+            }
+        }
+
         if (!tagToIdxs.containsKey(tag)) {
             return -1;
         }
-        return tagToIdxs.get(tag);
+        int ret = tagToIdxs.get(tag);
+        if (++nextCacheItem == tagIdxCache.length) {
+            nextCacheItem = 0;
+        }
+
+        tagIdxCache[nextCacheItem][0] = ret;
+        tagIdxCache[nextCacheItem][1] = tag;
+
+        return ret;
     }
 
     public T choiceTypeByIdx(int idx) {
