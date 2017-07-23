@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.*;
@@ -20,6 +22,8 @@ public class Gossip2 {
     private List<Server> servers;
     private Selector selector;
     private RegistryMapping<MessageType<Serializable>, Serializable> typeMapping;
+
+    boolean done = false;
 
     public static void main(String[] args) throws IOException {
         new Gossip2().run();
@@ -48,7 +52,7 @@ public class Gossip2 {
             }
         }
 
-        while (true) {
+        while (!done) {
             selector.select();
 
             Iterator<SelectionKey> keyIt = selector.selectedKeys().iterator();
@@ -79,7 +83,7 @@ public class Gossip2 {
     }
 
     Random rnd = new Random();
-    AtomicInteger cnt = new AtomicInteger();
+    int cnt = 0;
 
     Histogram hist = new Histogram(3);
 
@@ -89,44 +93,58 @@ public class Gossip2 {
         Serializable received;
 
         while ((received = connection.receive()) != null) {
-            if (received instanceof PingMessage) {
-                PingMessage ping = (PingMessage) received;
-                connection.portFrom = ping.getPort();
+            processMessage(connection, received);
+        }
+    }
 
-                PongMessage pong = new PongMessage();
-                pong.port = ping.port;
-                connection.send(pong);
-            } else if (received instanceof PongMessage) {
-                RandomWalkMessage rwm = new RandomWalkMessage();
-                rwm.setHops(30000);
-                rwm.setT(System.nanoTime());
+    int nMsgs = 0;
+    private void processMessage(Connection connection, Serializable received) {
+        if (received instanceof PingMessage) {
+            PingMessage ping = (PingMessage) received;
+            connection.portFrom = ping.getPort();
+
+            PongMessage pong = new PongMessage();
+            pong.port = ping.port;
+            connection.send(pong);
+        } else if (received instanceof PongMessage) {
+            RandomWalkMessage rwm = typeMapping.create(RandomWalkMessage.TYPE);
+            rwm.setHops(10000);
+            rwm.setT(System.nanoTime());
+            for (int i = 0; i < 1000; i++) {
                 connection.send(rwm);
-            } else if (received instanceof RandomWalkMessage) {
-                Connection nextConn = randomConnection(connection.server);
-                RandomWalkMessage rwm = (RandomWalkMessage) received;
-                long prevT = rwm.getT();
-                long nextT = System.nanoTime();
-                rwm.setT(nextT);
+                nMsgs++;
+            }
+
+            typeMapping.reuse(RandomWalkMessage.TYPE, rwm);
+        } else if (received instanceof RandomWalkMessage) {
+            Connection nextConn = randomConnection(connection.server);
+            RandomWalkMessage rwm = (RandomWalkMessage) received;
+            long prevT = rwm.getT();
+            long nextT = System.nanoTime();
+            rwm.setT(nextT);
 
 
-                int hops = rwm.hops;
+            int hops = rwm.hops;
 
-                if (hops < 25000) {
-                    hist.recordValue((nextT - prevT) / 1000);
-                }
+            if (hops < 8000) {
+                hist.recordValue((nextT - prevT) / 1000);
+            }
 
-                if (hops > 0) {
-                    rwm.hops = hops - 1;
-                    nextConn.send(received);
-                } else {
-                    System.out.println("Zero hops " + cnt.incrementAndGet());
-                    if (cnt.get() == 45) {
-                        for (int i = 75; i <= 100; i++) {
-                            System.out.println(i + "% " + hist.getValueAtPercentile(i));
-                        }
+            if (hops > 0) {
+                rwm.hops = hops - 1;
+                nextConn.send(received);
+            } else {
+                System.out.println("Zero hops " + ++cnt);
+                if (cnt == nMsgs) {
+                    for (int i = 75; i <= 100; i++) {
+                        System.out.println(i + "% " + hist.getValueAtPercentile(i));
                     }
+                    System.out.flush();
+                    done = true;
                 }
             }
+
+            typeMapping.poolByChoice(RandomWalkMessage.TYPE).accept(rwm);
         }
     }
 
@@ -171,7 +189,7 @@ public class Gossip2 {
         inChannel.configureBlocking(false);
 
         SelectionKey inKey = inChannel.register(selector, OP_READ);
-        Connection conn = new Connection(server, inChannel, 0, server.port, inKey);
+        Connection conn = new Connection(server, inChannel, 0, server.port, inKey, 64);
         inKey.attach(conn);
 
         server.in.add(conn);
@@ -191,7 +209,7 @@ public class Gossip2 {
         SocketChannel socketChannel = sel.provider().openSocketChannel();
         socketChannel.configureBlocking(false);
         SelectionKey key = socketChannel.register(sel, OP_CONNECT);
-        Connection connection = new Connection(server, socketChannel, portFrom, portTo, key);
+        Connection connection = new Connection(server, socketChannel, portFrom, portTo, key, 64);
         key.attach(connection);
         socketChannel.connect(new InetSocketAddress(portTo));
     }
@@ -234,57 +252,105 @@ public class Gossip2 {
         private ByteBuffer outBuffer;
         private CountOut countOut;
         private Out out;
+        private int maxInMsgSize;
+        private int skipNextNBytes;
 
-        public Connection(Server server, SocketChannel channel, int portFrom, int portTo, SelectionKey key) {
+        public Connection(Server server, SocketChannel channel, int portFrom, int portTo, SelectionKey key, int maxInMsgSize) {
             this.server = server;
             this.channel = channel;
             this.portFrom = portFrom;
             this.portTo = portTo;
             this.key = key;
+            this.maxInMsgSize = maxInMsgSize;
 
-            inBuffer = ByteBuffer.allocate(4096);
+            inBuffer = ByteBuffer.allocate(64 * 1024);
             deserializeBuf = inBuffer.duplicate();
             in = new BufIn(deserializeBuf);
 
-            outBuffer = ByteBuffer.allocate(4096);
+            outBuffer = ByteBuffer.allocate(512);
             countOut = new CountOut();
             out = new BufOut(outBuffer);
         }
 
         public Serializable receive() throws IOException {
-            channel.read(inBuffer);
+            while (true) {
+                int bufSize = inBuffer.position();
 
-            int frameStart = 4;
-            int bufSize = inBuffer.position();
-            if (bufSize < frameStart) {
-                return null;
+                int n = Math.min(bufSize, skipNextNBytes);
+                if (n > 0) {
+                    inBuffer.position(n).limit(bufSize);
+                    inBuffer.compact();
+                    skipNextNBytes -= n;
+                    continue;
+                }
+
+                int frameStart = 4;
+
+                if (frameStart > bufSize) {
+                    channel.read(inBuffer);
+                    bufSize = inBuffer.position();
+                    if (frameStart > bufSize) {
+                        return null;
+                    }
+                }
+
+                int frameEnd = inBuffer.getInt(0) + frameStart;
+
+                if (frameEnd >= maxInMsgSize) {
+                    skipNextNBytes = frameEnd;
+                    continue;
+                } else if (frameEnd > inBuffer.capacity()) {
+                    reallocateIn(frameEnd);
+                    continue;
+                } else if (frameEnd > bufSize) {
+                    channel.read(inBuffer);
+                    bufSize = inBuffer.position();
+                    if (frameEnd > bufSize) {
+                        return null;
+                    }
+                }
+
+                deserializeBuf.position(frameStart).limit(frameEnd);
+                inBuffer.position(frameEnd).limit(bufSize);
+
+                try {
+                    int tag = deserializeBuf.getInt();
+                    int idx = typeMapping.idxByTag(tag);
+
+                    Supplier<Serializable> supplier = typeMapping.constructorByIdx(idx);
+
+                    Serializable result = supplier.get();
+
+                    result.deserialize(in);
+
+                    return result;
+                } finally {
+                    inBuffer.compact();
+                }
             }
-
-            int frameEnd = inBuffer.getInt(0) + frameStart;
-
-            // TODO reallocate buf if needed
-            // TODO SKIP DATA if frame too big
-            if (bufSize < frameEnd) {
-                return null;
-            }
-
-            deserializeBuf.position(frameStart).limit(frameEnd);
-            inBuffer.position(frameEnd).limit(bufSize);
-
-            int tag = deserializeBuf.getInt();
-            int idx = typeMapping.idxByTag(tag);
-
-            Supplier<Serializable> supplier = typeMapping.getConstructor(idx);
-
-            Serializable result = supplier.get();
-
-            result.deserialize(in);
-
-            inBuffer.compact();
-
-            return result;
         }
 
+        private void reallocateIn(int bufSz) {
+            ByteBuffer prevBuf = inBuffer;
+            int newSize = inBuffer.capacity() * 2;
+            while (newSize < bufSz) {
+                newSize *= 2;
+            }
+            inBuffer = ByteBuffer.allocate(newSize);
+            deserializeBuf = inBuffer.duplicate();
+            in = new BufIn(deserializeBuf);
+            prevBuf.flip();
+            inBuffer.put(prevBuf);
+        }
+
+        public void writeBuf() throws IOException {
+            outBuffer.flip();
+            channel.write(outBuffer);
+            if (outBuffer.remaining() == 0) {
+                key.interestOps(key.interestOps() & ~OP_WRITE);
+            }
+            outBuffer.compact();
+        }
 
         public void send(Serializable msg) {
             countOut.reset();
@@ -301,16 +367,10 @@ public class Gossip2 {
 
             outBuffer.putInt(sizePos, frameEnd - frameStart);
 
-            key.interestOps(key.interestOps() | OP_WRITE);
-        }
-
-        public void writeBuf() throws IOException {
-            outBuffer.flip();
-            channel.write(outBuffer);
-            if (outBuffer.remaining() == 0) {
-                key.interestOps(key.interestOps() & ~OP_WRITE);
+            int ops = key.interestOps();
+            if ((ops & OP_WRITE) == 0) {
+                key.interestOps(ops | OP_WRITE);
             }
-            outBuffer.compact();
         }
 
         private void reallocateOut(int requiredSpace) {

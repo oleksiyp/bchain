@@ -8,7 +8,7 @@ import node2.in_out.*;
 @Getter
 @Setter
 @ToString
-public class RandomWalkMessage implements Serializable {
+public class RandomWalkMessage implements Serializable, Clearable {
     public static final MessageType<RandomWalkMessage> TYPE =
             new MessageType<>("RANDOM_WALK_MESSAGE", RandomWalkMessage.class);
 
@@ -30,5 +30,11 @@ public class RandomWalkMessage implements Serializable {
     public void serialize(Out<?> out) {
         out.putInt(hops);
         out.putLong(t);
+    }
+
+    @Override
+    public void clear() {
+        hops = 0;
+        t = 0;
     }
 }
