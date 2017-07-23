@@ -1,31 +1,29 @@
+package snd;
+
 import lombok.ToString;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
-import java.util.function.Consumer;
+import java.util.*;
 
 import static java.nio.channels.SelectionKey.*;
 
-public class SND {
+public class Gossip2 {
     public static final int PORT_START = 2000;
     private List<Server> servers;
     private Selector selector;
 
     public static void main(String[] args) throws IOException {
-        new SND().run();
+        new Gossip2().run();
     }
 
     private void run() throws IOException {
         selector = Selector.open();
 
         servers = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             servers.add(createServer(selector, i + PORT_START));
         }
 
@@ -80,18 +78,16 @@ public class SND {
 
     private void handleWrite(SelectionKey key) {
         Connection connection = (Connection) key.attachment();
-        Consumer<SocketChannel> sendReq = connection.outQ.poll();
+        Sender sendReq = connection.nextWriteJob();
         if (sendReq != null) {
-            System.out.println("Writing");
-            sendReq.accept((SocketChannel) key.channel());
-        } else {
-            key.interestOps(key.interestOps() & ~OP_WRITE);
+            System.out.println("Writing " + connection);
+            sendReq.send((SocketChannel) key.channel());
         }
     }
 
     private void handleConnect(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
-        if (channel.finishConnect()) {
+        if (!channel.finishConnect()) {
             cancelAndClose(key);
             return;
         }
@@ -99,8 +95,9 @@ public class SND {
         System.out.println("Connected " + connection);
 
         ByteBuffer buf = ByteBuffer.allocate(4);
-        buf.putInt(connection.portFrom);
-        connection.outQ.add((ch) -> {
+        buf.putInt(0, connection.portFrom);
+        key.interestOps(OP_READ);
+        connection.send((ch) -> {
             try {
                 ch.write(buf);
             } catch (IOException e) {
@@ -108,7 +105,6 @@ public class SND {
                 // skip
             }
         });
-        key.interestOps(OP_READ | OP_WRITE);
     }
 
     private void handleAccept(SelectionKey key) throws IOException {
@@ -116,8 +112,9 @@ public class SND {
         SocketChannel inChannel = servChannel.accept();
         Server server = (Server) key.attachment();
         inChannel.configureBlocking(false);
-        Connection conn = new Connection(inChannel, 0, server.port);
-        inChannel.register(selector, OP_CONNECT | OP_READ, conn);
+        SelectionKey inKey = inChannel.register(selector, OP_READ);
+        Connection conn = new Connection(inChannel, 0, server.port, inKey);
+        inKey.attach(conn);
         System.out.println("Accepted " + conn);
         server.in.add(conn);
     }
@@ -135,8 +132,9 @@ public class SND {
     private Connection connect(Selector sel, int portFrom, int portTo) throws IOException {
         SocketChannel socketChannel = sel.provider().openSocketChannel();
         socketChannel.configureBlocking(false);
-        Connection connection = new Connection(socketChannel, portFrom, portTo);
-        socketChannel.register(sel, OP_CONNECT, connection);
+        SelectionKey key = socketChannel.register(sel, OP_CONNECT);
+        Connection connection = new Connection(socketChannel, portFrom, portTo, key);
+        key.attach(connection);
         socketChannel.connect(new InetSocketAddress(portTo));
         return connection;
     }
@@ -169,12 +167,32 @@ public class SND {
         private SocketChannel channel;
         private int portFrom;
         private final int portTo;
-        public Queue<Consumer<SocketChannel>> outQ;
+        private final SelectionKey key;
+        public Queue<Sender> outQ;
 
-        public Connection(SocketChannel channel, int portFrom, int portTo) {
+        public Connection(SocketChannel channel, int portFrom, int portTo, SelectionKey key) {
             this.channel = channel;
             this.portFrom = portFrom;
             this.portTo = portTo;
+            this.key = key;
+            outQ = new ArrayDeque<>();
         }
+
+        public void send(Sender consumer) {
+            outQ.add(consumer);
+            key.interestOps(key.interestOps() | OP_WRITE);
+        }
+
+        public Sender nextWriteJob() {
+            Sender consumer = outQ.poll();
+            if (consumer == null) {
+                key.interestOps(key.interestOps() & ~OP_WRITE);
+            }
+            return consumer;
+        }
+    }
+
+    interface Sender {
+        void send(SocketChannel channel);
     }
 }
