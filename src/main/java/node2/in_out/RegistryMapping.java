@@ -143,4 +143,9 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
     public <R extends C> void reuse(ChoiceType<R> type, R value) {
         poolByChoice(type).accept(value);
     }
+
+    public void reuse(TypeAware typeAware) {
+        poolByChoice((ChoiceType<C>) typeAware.getType()).accept((C) typeAware);
+    }
+
 }
