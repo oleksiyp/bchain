@@ -1,4 +1,4 @@
-package node2.registry;
+package gossip.registry;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

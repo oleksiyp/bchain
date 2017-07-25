@@ -1,4 +1,4 @@
-package node2;
+package gossip;
 
 public interface Clearable {
     void clear();

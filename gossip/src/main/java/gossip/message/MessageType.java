@@ -1,7 +1,7 @@
-package node2.message;
+package gossip.message;
 
-import node2.in_out.Serializable;
-import node2.registry.RegistryItem;
+import gossip.in_out.Serializable;
+import gossip.registry.RegistryItem;
 
 public class MessageType<T extends Serializable> extends RegistryItem<T> {
     public MessageType(String name, Class<T> type) {

@@ -1,23 +1,20 @@
-package node2;
+package gossip;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node2.in_out.*;
-import node2.message.AbstractMessage;
-import node2.message.MessageType;
-import node2.registry.RegistryItem;
+import gossip.in_out.*;
+import gossip.message.AbstractMessage;
+import gossip.message.MessageType;
+import gossip.registry.RegistryItem;
 
+@ToString
 @Getter
 @Setter
-@EqualsAndHashCode
-@ToString(includeFieldNames = false)
-public class PongMessage extends AbstractMessage {
-    public static final MessageType<PongMessage> TYPE =
-            new MessageType<>(
-                    "PONG_MESSAGE",
-                    PongMessage.class);
+public class PingMessage extends AbstractMessage {
+    public static final MessageType<PingMessage> TYPE = new MessageType<>(
+            "PING_MESSAGE",
+            PingMessage.class);
 
     int port;
 

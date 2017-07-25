@@ -1,4 +1,4 @@
-package node2.registry;
+package gossip.registry;
 
 import io.netty.util.collection.IntObjectHashMap;
 import lombok.Getter;

@@ -1,12 +1,12 @@
-package node2;
+package gossip;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import node2.in_out.*;
-import node2.message.AbstractMessage;
-import node2.message.MessageType;
-import node2.registry.RegistryItem;
+import gossip.in_out.*;
+import gossip.message.AbstractMessage;
+import gossip.message.MessageType;
+import gossip.registry.RegistryItem;
 
 @Getter
 @Setter

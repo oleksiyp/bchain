@@ -1,10 +1,10 @@
-package node2.registry;
+package gossip.registry;
 
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import io.netty.util.collection.IntObjectHashMap;
-import node2.Clearable;
-import node2.TypeAware;
+import gossip.Clearable;
+import gossip.TypeAware;
 
 import java.util.*;
 import java.util.function.Consumer;

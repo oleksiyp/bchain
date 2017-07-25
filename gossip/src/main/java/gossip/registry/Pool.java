@@ -1,4 +1,4 @@
-package node2.registry;
+package gossip.registry;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;

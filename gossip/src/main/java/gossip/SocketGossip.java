@@ -1,17 +1,15 @@
-package node2;
+package gossip;
 
 import lombok.Getter;
-import node2.message.Message;
-import node2.message.MessageType;
-import node2.registry.RegistryMapping;
-import org.HdrHistogram.Histogram;
+import gossip.message.Message;
+import gossip.message.MessageType;
+import gossip.registry.RegistryMapping;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;

@@ -1,6 +1,6 @@
-package node2;
+package gossip;
 
-import node2.registry.RegistryItem;
+import gossip.registry.RegistryItem;
 
 public interface TypeAware {
     RegistryItem<?> getType();

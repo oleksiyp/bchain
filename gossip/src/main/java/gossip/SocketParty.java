@@ -1,10 +1,10 @@
-package node2;
+package gossip;
 
 import lombok.Getter;
-import node2.in_out.*;
-import node2.message.Message;
-import node2.message.MessageType;
-import node2.registry.RegistryMapping;
+import gossip.in_out.*;
+import gossip.message.Message;
+import gossip.message.MessageType;
+import gossip.registry.RegistryMapping;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

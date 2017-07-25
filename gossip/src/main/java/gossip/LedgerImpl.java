@@ -1,4 +1,4 @@
-package node2;
+package gossip;
 
 import io.netty.util.collection.LongObjectHashMap;
 
@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.lang.Math.abs;
 import static java.util.Arrays.setAll;

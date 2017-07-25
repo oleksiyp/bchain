@@ -1,10 +1,10 @@
-package node2;
+package gossip;
 
 import lombok.Getter;
-import node2.message.Message;
-import node2.message.MessageType;
-import node2.registry.Registry;
-import node2.registry.RegistryMapping;
+import gossip.message.Message;
+import gossip.message.MessageType;
+import gossip.registry.Registry;
+import gossip.registry.RegistryMapping;
 
 import java.io.IOException;
 import java.nio.channels.*;

@@ -1,4 +1,4 @@
-package node2.in_out;
+package gossip.in_out;
 
 public interface In<T extends In> {
     byte get();

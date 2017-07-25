@@ -1,8 +1,8 @@
-package node2.message;
+package gossip.message;
 
 import lombok.Getter;
-import node2.in_out.In;
-import node2.in_out.Out;
+import gossip.in_out.In;
+import gossip.in_out.Out;
 
 import java.util.Random;
 
