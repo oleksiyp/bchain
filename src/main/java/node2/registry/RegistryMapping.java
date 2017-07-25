@@ -1,14 +1,16 @@
-package node2.in_out;
+package node2.registry;
 
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import io.netty.util.collection.IntObjectHashMap;
+import node2.Clearable;
+import node2.TypeAware;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class RegistryMapping<T extends ChoiceType<C>, C> {
+public class RegistryMapping<T extends RegistryItem<C>, C> {
     private final TIntIntMap tagToIdxs;
     private final int [] idxToTags;
     int [][] tagIdxCache;
@@ -20,7 +22,7 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
     private final Map<T, Integer> reverseChoiceTypeMap;
     private int nextCacheItem;
 
-    public RegistryMapping(Map<Integer, ChoiceType<?>> choiceTypeMap,
+    public RegistryMapping(Map<Integer, RegistryItem<?>> choiceTypeMap,
                            Map<Integer, Supplier<?>> constructors,
                            Class<T> clazz) {
         tagToIdxs = new TIntIntHashMap(choiceTypeMap.size());
@@ -36,9 +38,9 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
         pools = new ArrayList<>();
 
         for (int tag : choiceTypeMap.keySet()) {
-            ChoiceType<?> choiceTypeObj = choiceTypeMap.get(tag);
-            if (clazz.isInstance(choiceTypeObj)) {
-                T choiceType = clazz.cast(choiceTypeObj);
+            RegistryItem<?> registryItemObj = choiceTypeMap.get(tag);
+            if (clazz.isInstance(registryItemObj)) {
+                T choiceType = clazz.cast(registryItemObj);
 
                 tagToIdxs.put(tag, i);
                 idxToTags[i] = tag;
@@ -83,7 +85,7 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
         return idxToTags.length;
     }
 
-    public <C extends ChoiceType<?>> int tagByChoiceType(C choice) {
+    public <C extends RegistryItem<?>> int tagByChoiceType(C choice) {
         return reverseChoiceTypeMap.getOrDefault(choice, -1);
     }
 
@@ -120,7 +122,7 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
         return constructors.get(idx);
     }
 
-    public <R extends C> Supplier<R> constructorByChoice(ChoiceType<R> type) {
+    public <R extends C> Supplier<R> constructorByChoice(RegistryItem<R> type) {
         int tag = tagByChoiceType(type);
         if (tag == -1) {
             throw new IllegalArgumentException(type.toString());
@@ -128,7 +130,7 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
         return (Supplier<R>) constructorByIdx(idxByTag(tag));
     }
 
-    public <R extends C> Consumer<R> poolByChoice(ChoiceType<R> type) {
+    public <R extends C> Consumer<R> poolByChoice(RegistryItem<R> type) {
         int tag = tagByChoiceType(type);
         if (tag == -1) {
             throw new IllegalArgumentException(type.toString());
@@ -136,16 +138,16 @@ public class RegistryMapping<T extends ChoiceType<C>, C> {
         return (Consumer<R>) pools.get(idxByTag(tag));
     }
 
-    public <R extends C> R create(ChoiceType<R> type) {
+    public <R extends C> R create(RegistryItem<R> type) {
         return constructorByChoice(type).get();
     }
 
-    public <R extends C> void reuse(ChoiceType<R> type, R value) {
+    public <R extends C> void reuse(RegistryItem<R> type, R value) {
         poolByChoice(type).accept(value);
     }
 
     public void reuse(TypeAware typeAware) {
-        poolByChoice((ChoiceType<C>) typeAware.getType()).accept((C) typeAware);
+        poolByChoice((RegistryItem<C>) typeAware.getType()).accept((C) typeAware);
     }
 
 }

@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import node2.in_out.*;
+import node2.message.AbstractMessage;
+import node2.message.MessageType;
+import node2.registry.RegistryItem;
 
 @Getter
 @Setter
@@ -19,7 +22,7 @@ public class PongMessage extends AbstractMessage {
     int port;
 
     @Override
-    public ChoiceType<?> getType() {
+    public RegistryItem<?> getType() {
         return TYPE;
     }
 

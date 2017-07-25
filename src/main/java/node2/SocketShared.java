@@ -1,70 +1,35 @@
 package node2;
 
 import lombok.Getter;
-import node2.in_out.*;
-import org.HdrHistogram.Histogram;
+import node2.message.Message;
+import node2.message.MessageType;
+import node2.registry.Registry;
+import node2.registry.RegistryMapping;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.*;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.*;
-import static node2.in_out.Registry.emptyRegistry;
 
 public class SocketShared {
-    public static final int PORT_START = 2000;
     @Getter
     private final Selector selector;
     @Getter
-    private final RegistryMapping<MessageType<Message>, Message> typeMapping;
+    private final RegistryMapping<MessageType<Message>, Message> messageTypes;
     private final int maxInMsgSize;
 
     boolean done = false;
 
-    public SocketShared(RegistryMapping<MessageType<Message>, Message> typeMapping,
+    public SocketShared(Registry<?> registry,
                         int maxInMsgSize) throws IOException {
         this.selector = Selector.open();
-        this.typeMapping = typeMapping;
+        this.messageTypes = registry.mapping(MessageType.class);
         this.maxInMsgSize = maxInMsgSize;
     }
 
-    public static void main(String[] args) throws IOException {
-        long start = System.nanoTime();
 
-        SocketShared shared = new SocketShared(emptyRegistry()
-                .register(0x0, PingMessage.TYPE, PingMessage::new)
-                .register(0x1, PongMessage.TYPE, PongMessage::new)
-                .register(0x2, RandomWalkMessage.TYPE, RandomWalkMessage::new)
-                .mapping(MessageType.class), 64);
-
-        List<SocketGossip> servers = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            int iCopy = i;
-            Supplier<Integer> portGen = () -> iCopy + PORT_START;
-            servers.add(new SocketGossip(shared, portGen));
-        }
-
-        for (int i = 0; i < servers.size(); i++) {
-            for (int j = i + 1; j < servers.size(); j++) {
-                SocketGossip from = servers.get(i);
-                SocketGossip to = servers.get(j);
-                from.connect(new InetSocketAddress(to.getPort()));
-            }
-        }
-
-        shared.run();
-
-
-        long end = System.nanoTime();
-        System.out.printf("%.3f seconds%n", (end - start) / 1e9);
-    }
-
-    private void run() throws IOException {
+    public void loopSelector() throws IOException {
         while (!done) {
             if (selector.selectNow() == 0) continue;
 

@@ -1,4 +1,4 @@
-package node2.in_out;
+package node2.registry;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;

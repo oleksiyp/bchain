@@ -1,8 +1,10 @@
 package node2;
 
 import lombok.Getter;
-import lombok.ToString;
 import node2.in_out.*;
+import node2.message.Message;
+import node2.message.MessageType;
+import node2.registry.RegistryMapping;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -95,7 +97,7 @@ public class SocketParty {
 
             try {
                 int tag = deserializeBuf.getInt();
-                RegistryMapping<MessageType<Message>, Message> typeMapping = gossip.getShared().getTypeMapping();
+                RegistryMapping<MessageType<Message>, Message> typeMapping = gossip.getShared().getMessageTypes();
 
                 int idx = typeMapping.idxByTag(tag);
                 Supplier<Message> supplier = typeMapping.constructorByIdx(idx);
@@ -151,7 +153,7 @@ public class SocketParty {
         int frameStart = outBuffer.position();
         outBuffer.putInt(getGossip()
                 .getShared()
-                .getTypeMapping()
+                .getMessageTypes()
                 .tagByChoiceType(msg.getType()));
         msg.serialize(out);
         int frameEnd = outBuffer.position();

@@ -1,7 +1,9 @@
 package node2;
 
 import lombok.Getter;
-import node2.in_out.*;
+import node2.message.Message;
+import node2.message.MessageType;
+import node2.registry.RegistryMapping;
 import org.HdrHistogram.Histogram;
 
 import java.io.IOException;
@@ -16,7 +18,7 @@ import java.util.function.Supplier;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 
-class SocketGossip {
+public class SocketGossip {
     @Getter
     private final int port;
     private final ServerSocketChannel serverChannel;
@@ -32,7 +34,7 @@ class SocketGossip {
     public SocketGossip(SocketShared shared, Supplier<Integer> portGen) throws IOException {
         this.shared = shared;
         this.portGen = portGen;
-        typeMapping = getShared().getTypeMapping();
+        typeMapping = getShared().getMessageTypes();
         Selector selector = shared.getSelector();
         serverChannel = selector.provider().openServerSocketChannel();
         serverChannel.configureBlocking(false);
@@ -58,7 +60,7 @@ class SocketGossip {
         ledger = new LedgerImpl<>(
                 1024,
                 TimeUnit.SECONDS.toMillis(60),
-                shared.getTypeMapping()::reuse);
+                shared.getMessageTypes()::reuse);
     }
 
     void connect(InetSocketAddress address) throws IOException {
@@ -113,7 +115,7 @@ class SocketGossip {
         } else if (msg instanceof PongMessage) {
 
             RandomWalkMessage rwm = typeMapping.create(RandomWalkMessage.TYPE);
-            rwm.setHops(10000);
+            rwm.setHops(10000000);
             rwm.setT(System.nanoTime());
             for (int i = 0; i < 100; i++) {
                 if (nMsgs == 0) {

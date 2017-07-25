@@ -1,6 +1,8 @@
-package node2.in_out;
+package node2.message;
 
 import lombok.Getter;
+import node2.in_out.In;
+import node2.in_out.Out;
 
 import java.util.Random;
 

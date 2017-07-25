@@ -1,4 +1,4 @@
-package node2.in_out;
+package node2.registry;
 
 import io.netty.util.collection.IntObjectHashMap;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Registry<F> {
-    private final Map<Integer, ChoiceType<?>> choiceTypes;
+    private final Map<Integer, RegistryItem<?>> choiceTypes;
     private final Map<Integer, Supplier<?>> constructors;
 
     private RegistryMapping<?, ?> savedMapping;
@@ -26,7 +26,7 @@ public class Registry<F> {
 
     public <M> Registry<F> register(
             int tag,
-            ChoiceType<M> type,
+            RegistryItem<M> type,
             Supplier<M> constructor) {
         reg(tag, type, constructor);
         return this;
@@ -34,14 +34,14 @@ public class Registry<F> {
 
     public <M> Registry<F> register(
             int tag,
-            ChoiceType<M> type,
+            RegistryItem<M> type,
             Function<F, M> constructor) {
         register(tag, type, () -> constructor.apply(constructorParam));
         return this;
     }
 
     private void reg(int tag,
-                     ChoiceType<?> type,
+                     RegistryItem<?> type,
                      Supplier<?> constructor) {
         if (choiceTypes.containsKey(tag) ||
                 choiceTypes.put(tag, type) != null) {
@@ -67,7 +67,7 @@ public class Registry<F> {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends ChoiceType<C>, C>
+    public <T extends RegistryItem<C>, C>
     RegistryMapping<T, C> mapping(Class<?> clazz) {
         if (savedClass == clazz) {
             return (RegistryMapping<T, C>) savedMapping;

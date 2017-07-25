@@ -1,7 +1,9 @@
 package node2.in_out;
 
+import node2.registry.RegistryItem;
+
 public interface Serializable {
-    ChoiceType<?> getType();
+    RegistryItem<?> getType();
 
     void deserialize(In<?> in);
 

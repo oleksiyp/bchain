@@ -1,4 +1,4 @@
-package node2.in_out;
+package node2;
 
 public interface Clearable {
     void clear();
