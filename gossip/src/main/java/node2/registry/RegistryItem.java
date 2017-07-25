@@ -2,7 +2,6 @@ package node2.registry;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import util.mutable.Mutable;
 
 @Getter
 @AllArgsConstructor

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -30,10 +31,12 @@ public class SocketGossip {
     private final SocketShared shared;
     private final Supplier<Integer> portGen;
     private final RegistryMapping<MessageType<Message>, Message> typeMapping;
+    private final BiConsumer<SocketParty, Message> handler;
 
-    public SocketGossip(SocketShared shared, Supplier<Integer> portGen) throws IOException {
+    public SocketGossip(SocketShared shared, Supplier<Integer> portGen, BiConsumer<SocketParty, Message> handler) throws IOException {
         this.shared = shared;
         this.portGen = portGen;
+        this.handler = handler;
         typeMapping = getShared().getMessageTypes();
         Selector selector = shared.getSelector();
         serverChannel = selector.provider().openServerSocketChannel();
@@ -96,64 +99,9 @@ public class SocketGossip {
         in.add(party);
     }
 
-    Random rnd = new Random();
-    int cnt = 0;
-
-    Histogram hist = new Histogram(3);
-
-    static int nMsgs;
-    static int nSends;
     public void processMessage(Message msg, SocketParty party) {
+        handler.accept(party, msg);
 //        getLedger().add(msg.getId(), System.currentTimeMillis(), msg)
-
-        if (msg instanceof PingMessage) {
-            PingMessage ping = (PingMessage) msg;
-
-            PongMessage pong = new PongMessage();
-            pong.port = ping.port;
-            party.send(pong);
-        } else if (msg instanceof PongMessage) {
-
-            RandomWalkMessage rwm = typeMapping.create(RandomWalkMessage.TYPE);
-            rwm.setHops(10000000);
-            rwm.setT(System.nanoTime());
-            for (int i = 0; i < 100; i++) {
-                if (nMsgs == 0) {
-                    party.send(rwm);
-                    nMsgs++;
-                }
-            }
-
-            typeMapping.reuse(RandomWalkMessage.TYPE, rwm);
-        } else if (msg instanceof RandomWalkMessage) {
-            nSends++;
-            SocketParty nextConn = party.getGossip().randomConnection();
-            RandomWalkMessage rwm = (RandomWalkMessage) msg;
-            long prevT = rwm.getT();
-            long nextT = System.nanoTime();
-            rwm.setT(nextT);
-
-            int hops = rwm.hops;
-            long mks = (nextT - prevT) / 1000;
-            hist.recordValue(mks);
-
-            if (hops > 0) {
-                rwm.hops = hops - 1;
-                nextConn.send(msg);
-            } else {
-//                System.out.println("Zero hops " + ++cnt);
-                cnt++;
-                if (cnt == nMsgs) {
-                    for (double i = 50; i <= 100; i += 2) {
-                        System.out.println(i + "% " + hist.getValueAtPercentile(i));
-                    }
-                    shared.done = true;
-                    System.out.println(nSends + " messages");
-                }
-            }
-
-            typeMapping.reuse(RandomWalkMessage.TYPE, rwm);
-        }
 
     }
 }

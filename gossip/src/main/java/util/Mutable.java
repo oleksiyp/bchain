@@ -1,4 +1,4 @@
-package util.mutable;
+package util;
 
 public interface Mutable<T extends Mutable<T>> {
     void copyFrom(T obj);
