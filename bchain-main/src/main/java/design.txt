@@ -1,0 +1,71 @@
+
+
+
+Concerns to address:
+ * what are source of the truth tables?
+| NAME  | KEY       | COLUMNS                                                   |
+|-------|-----------|-----------------------------------------------------------|
+| Tx    | txHash    | isCoinbase, inputs[]->{outTxHash, outTxIndex, signature}  |
+|       |           |             outputs[]->{value,address}                    |
+| Block | blockHash | prevBlockHash, ts, level, txs, nounce                     |
+| TxDel | txHash    |                                                           |
+
+ * what are state tables?
+| NAME  | KEY          | COLUMNS                                                   |
+|-------|--------------|-----------------------------------------------------------|
+|BkState| txHash       | GENESIS|IN_CHAIN|ALTERNATIVE|MASTER|INVALID|ORPHANED      |
+|TxState| txHash       | PENDING|IN_BLOCK|INVALID|ORPHANED                         |
+| TxOut | txHash,outIdx| value, address, UNSPENT|SPENT|IN_PENDING_TX, inTx, inIdx  |
+|  UA   | address      | value                                                     |
+|Master | 1            | height, blockHash                                         |
+
+State tables depend on SoT tables.
+There should be algorithm to reproduce the state.
+
+Adding Block
+
+0. If there is no blocks allow to add first one as GENESIS.
+
+1. Check if parent is ORPHANED or not existing, then mark ORPHANED and quit
+
+2. Check if there is orphan trees for the hash. Remove ORPHANED mark and process
+all the blocks together with current in DFS order for further steps.
+Create push/pop sequence
+
+3. Loop
+
+4. Process push. Check if parent is VALID, if not mark block as INVALID and continue to next block
+
+5. Process push. Check if block is VALID on current TxOut.
+  a. double spend inside and outside of the block
+  b. input values are positive
+  c. output values are positive
+  d. references some TxOut
+  e. has valid signature
+  f. inputSum >= outputSum, (coinbase and genesis handled differently)
+
+6. Process push. Add all transaction outputs as TxOut.
+
+7. Process push. Mark block as ALTERNATIVE.
+
+8. Process push. Compare master with current block if current wins, replace
+MASTER, remark all parents till genesis as IN_CHAIN and on prev master as alternative
+
+9. Process push. Mark all block's txs as IN_BLOCK, INVALID or ORPHANED correspondingly
+
+9. Notify cases of change txs state from PENDING to other state.
+
+10. Modify UA
+
+11. Process pop. Remove corresponding TxOuts. Move all txs state to PENDING, notify.
+
+Adding transaction
+
+
+
+
+
+
+
+ * how to perform full replication?
+ * how to perform partial replication?
