@@ -24,7 +24,7 @@ public class StoreTransactionProcessor {
             return containsSame();
         }
 
-        txDao.addTx(tx);
+        txDao.saveTx(tx);
 
         return ok();
     }

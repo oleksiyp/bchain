@@ -6,5 +6,5 @@ import bchain.domain.Tx;
 public interface TxDao {
     Tx findTx(Hash hash);
 
-    void addTx(Tx transaction);
+    void saveTx(Tx transaction);
 }

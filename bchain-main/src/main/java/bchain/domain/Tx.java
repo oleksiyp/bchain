@@ -8,4 +8,8 @@ public class Tx {
     public boolean verify() {
         return false;
     }
+
+    public static TxBuilder builder() {
+        return new TxBuilder();
+    }
 }

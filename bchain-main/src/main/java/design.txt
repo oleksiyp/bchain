@@ -1,6 +1,5 @@
 
 
-
 Concerns to address:
  * what are source of the truth tables?
 | NAME  | KEY       | COLUMNS                                                   |
