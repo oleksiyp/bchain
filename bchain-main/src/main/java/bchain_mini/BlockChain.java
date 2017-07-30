@@ -63,7 +63,7 @@ public class BlockChain {
         return getMaxHeightBlockAndPool().block;
     }
 
-    /** Get the bchain_mini.UTXOPool for mining a new block on top of max height block */
+    /** Get the bchain_mini.UTXOPool for mining a new block on top hashOf max height block */
     public UTXOPool getMaxHeightUTXOPool() {
         return getMaxHeightBlockAndPool().pool;
     }

@@ -1,6 +1,6 @@
 package bchain.dao.sqlite;
 
-import bchain.dao.TestDao;
+import bchain.dao.TxDao;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
@@ -20,7 +20,7 @@ public class SqliteConfig {
     }
 
     @Bean
-    public TestDao testDao() {
-        return new SqliteTestDao();
+    public TxDao testDao() {
+        return new SqliteTxDao();
     }
 }

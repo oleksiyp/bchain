@@ -4,10 +4,10 @@ import java.util.Arrays;
 
 public class UTXO implements Comparable<UTXO> {
 
-    /** Hash of the transaction from which this bchain_mini.UTXO originates */
+    /** Hash hashOf the transaction from which this bchain_mini.UTXO originates */
     private byte[] txHash;
 
-    /** Index of the corresponding output in said transaction */
+    /** Index hashOf the corresponding output in said transaction */
     private int index;
 
     /**
@@ -19,12 +19,12 @@ public class UTXO implements Comparable<UTXO> {
         this.index = index;
     }
 
-    /** @return the transaction hash of this bchain_mini.UTXO */
+    /** @return the transaction hash hashOf this bchain_mini.UTXO */
     public byte[] getTxHash() {
         return txHash;
     }
 
-    /** @return the index of this bchain_mini.UTXO */
+    /** @return the index hashOf this bchain_mini.UTXO */
     public int getIndex() {
         return index;
     }
@@ -54,7 +54,7 @@ public class UTXO implements Comparable<UTXO> {
     }
 
     /**
-     * Simple implementation of a bchain_mini.UTXO hashCode that respects equality of UTXOs // (i.e.
+     * Simple implementation hashOf a bchain_mini.UTXO hashCode that respects equality hashOf UTXOs // (i.e.
      * utxo1.equals(utxo2) => utxo1.hashCode() == utxo2.hashCode())
      */
     public int hashCode() {

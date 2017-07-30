@@ -7,7 +7,7 @@ import java.util.Set;
 public class UTXOPool {
 
     /**
-     * The current collection of UTXOs, with each one mapped to its corresponding transaction output
+     * The current collection hashOf UTXOs, with each one mapped to its corresponding transaction output
      */
     private HashMap<UTXO, Transaction.Output> H;
 
@@ -16,7 +16,7 @@ public class UTXOPool {
         H = new HashMap<UTXO, Transaction.Output>();
     }
 
-    /** Creates a new bchain_mini.UTXOPool that is a copy of {@code uPool} */
+    /** Creates a new bchain_mini.UTXOPool that is a copy hashOf {@code uPool} */
     public UTXOPool(UTXOPool uPool) {
         H = new HashMap<UTXO, Transaction.Output>(uPool.H);
     }
@@ -44,7 +44,7 @@ public class UTXOPool {
         return H.containsKey(utxo);
     }
 
-    /** Returns an {@code ArrayList} of all UTXOs in the pool */
+    /** Returns an {@code ArrayList} hashOf all UTXOs in the pool */
     public ArrayList<UTXO> getAllUTXO() {
         Set<UTXO> setUTXO = H.keySet();
         ArrayList<UTXO> allUTXO = new ArrayList<UTXO>();
