@@ -1,12 +1,15 @@
 package bchain.util;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.*;
-import org.springframework.jdbc.support.JdbcUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
-import java.util.function.BinaryOperator;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ExtendedJdbcTemplate extends JdbcTemplate {
     public ExtendedJdbcTemplate() {
@@ -20,55 +23,45 @@ public class ExtendedJdbcTemplate extends JdbcTemplate {
         super(dataSource, lazyInit);
     }
 
-    public <T> T batchQuery(final String sql,
-                            BatchPreparedStatementSetter pss,
-                            final ResultSetExtractor<T> rse,
-                            BinaryOperator<T> combiner) throws DataAccessException {
-
-        return execute(sql, (PreparedStatementCallback<T>) ps -> {
-            try {
-                int batchSize = pss.getBatchSize();
-                InterruptibleBatchPreparedStatementSetter ipss =
-                        (pss instanceof InterruptibleBatchPreparedStatementSetter ?
-                                (InterruptibleBatchPreparedStatementSetter) pss : null);
-                if (JdbcUtils.supportsBatchUpdates(ps.getConnection())) {
-                    T result = null;
-                    for (int i = 0; i < batchSize; i++) {
-                        pss.setValues(ps, i);
-                        if (ipss != null && ipss.isBatchExhausted(i)) {
-                            break;
-                        }
-                        ResultSet rs = ps.executeQuery();
-                        T data = rse.extractData(rs);
-                        if (result == null) {
-                            result = data;
-                        } else {
-                            result = combiner.apply(result, data);
-                        }
-                    }
-                    return result;
-                } else {
-                    T result = null;
-                    for (int i = 0; i < batchSize; i++) {
-                        pss.setValues(ps, i);
-                        if (ipss != null && ipss.isBatchExhausted(i)) {
-                            break;
-                        }
-                        ResultSet rs = ps.executeQuery();
-                        T data = rse.extractData(rs);
-                        if (result == null) {
-                            result = data;
-                        } else {
-                            result = combiner.apply(result, data);
-                        }
-                    }
-                    return result;
-                }
-            } finally {
-                if (pss instanceof ParameterDisposer) {
-                    ((ParameterDisposer) pss).cleanupParameters();
+    public <K, V> Map<K, V> queryMapSingleValue(String sql,
+                                                List<K> params,
+                                                PrepareMapper<K> prepareMapper,
+                                                RowMapper<V> rowMapper) {
+        return execute(sql, (PreparedStatementCallback<Map<K, V>>) ps -> {
+            Map<K, V> map = new HashMap<>();
+            int n = 0;
+            for (K param : params) {
+                prepareMapper.prepare(ps, n++, param);
+                ResultSet rs = ps.executeQuery();
+                int rowNum = 0;
+                while (rs.next()) {
+                    map.put(param, rowMapper.mapRow(rs, ++rowNum));
                 }
             }
+            return map;
         });
     }
+
+
+    public <K, V> Map<K, List<V>> queryMapList(String sql,
+                                               List<K> params,
+                                               PrepareMapper<K> keyMapper,
+                                               RowMapper<V> rowMapper) {
+        return execute(sql, (PreparedStatementCallback<Map<K, List<V>>>) ps -> {
+            Map<K, List<V>> map = new HashMap<>();
+            int n = 0;
+            for (K param : params) {
+                keyMapper.prepare(ps, n++, param);
+                ResultSet rs = ps.executeQuery();
+                List<V> lst = new ArrayList<>();
+                int rowNum = 0;
+                while (rs.next()) {
+                    lst.add(rowMapper.mapRow(rs, ++rowNum));
+                }
+                map.put(param, lst);
+            }
+            return map;
+        });
+    }
+
 }

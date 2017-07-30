@@ -4,8 +4,11 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
+import static bchain.domain.TxHash.computeHash;
 import static com.google.common.collect.ImmutableList.copyOf;
 
 @ToString
@@ -34,7 +37,9 @@ public class Tx {
     }
 
     public boolean verify() {
-        return false;
+        Hash computedHash = computeHash(coinbase, inputs, outputs);
+
+        return computedHash.equals(this.hash);
     }
 
     public static TxBuilder builder() {
@@ -46,5 +51,10 @@ public class Tx {
                         List<TxInput> inputs,
                         List<TxOutput> outputs) {
         return new Tx(hash, coinbase, inputs, outputs);
+    }
+
+    public void digest(DataOutputStream dataOut) throws IOException {
+        computeHash(coinbase, inputs, outputs)
+                .digest(dataOut);
     }
 }

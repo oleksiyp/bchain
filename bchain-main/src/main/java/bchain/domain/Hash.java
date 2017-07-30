@@ -51,4 +51,12 @@ public class Hash {
             throw new RuntimeException(e);
         }
     }
+
+    public static void digest(Hash hash, DataOutputStream dataOut) throws IOException {
+        if (hash != null) {
+            hash.digest(dataOut);
+        } else {
+            dataOut.write(0);
+        }
+    }
 }

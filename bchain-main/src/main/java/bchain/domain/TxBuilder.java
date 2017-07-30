@@ -1,18 +1,14 @@
 package bchain.domain;
 
 import lombok.Getter;
-import lombok.Setter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static bchain.domain.Tx.tx;
 
 public class TxBuilder {
-    @Getter@Setter
+    @Getter
     private boolean coinbase;
 
     private final List<TxInput> inputs;
@@ -25,27 +21,14 @@ public class TxBuilder {
     }
 
     public Tx build() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        Hash hash;
-        try (DataOutputStream dataOut = new DataOutputStream(out)) {
-            digest(dataOut);
-            hash = Hash.hashOf(out.toByteArray());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        Hash hash = TxHash.computeHash(coinbase, inputs, outputs);
 
         return tx(hash, coinbase, inputs, outputs);
     }
 
-    private void digest(DataOutputStream dataOut) throws IOException {
-        for (TxInput input : inputs) {
-            input.digest(dataOut);
-        }
-
-        for (TxOutput output : outputs) {
-            output.digest(dataOut);
-        }
+    public TxBuilder setCoinbase(boolean coinbase) {
+        this.coinbase = coinbase;
+        return this;
     }
 
     public TxBuilder add(TxInput input) {

@@ -4,7 +4,7 @@ import bchain.domain.Hash;
 import bchain.domain.Tx;
 
 public interface TxDao {
-    Tx findTx(Hash hash);
+    boolean hasTx(Hash hash);
 
     void saveTx(Tx transaction);
 }

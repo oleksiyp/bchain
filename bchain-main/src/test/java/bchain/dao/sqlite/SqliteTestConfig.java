@@ -1,5 +1,6 @@
 package bchain.dao.sqlite;
 
+import bchain.util.ExtendedJdbcTemplate;
 import org.flywaydb.core.Flyway;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -38,5 +39,9 @@ public class SqliteTestConfig {
         return flyway;
     }
 
+    @Bean
+    public ExtendedJdbcTemplate jdbcTemplate(DataSource ds) {
+        return new ExtendedJdbcTemplate(ds);
+    }
 }
 

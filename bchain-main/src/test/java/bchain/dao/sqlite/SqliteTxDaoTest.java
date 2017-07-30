@@ -31,7 +31,7 @@ public class SqliteTxDaoTest {
 
     @Test
     @FlywayTest
-    public void save() {
+    public void saveTx() {
         // given
         Tx tx = Tx.builder()
                 .add(input(hashOf("abc"), 0, rndBytes(16)))
@@ -51,7 +51,7 @@ public class SqliteTxDaoTest {
 
     @Test
     @FlywayTest
-    public void find() {
+    public void hasTx() {
         // given
         Tx tx = Tx.builder()
                 .add(input(hashOf("abc"), 0, rndBytes(16)))
@@ -59,18 +59,15 @@ public class SqliteTxDaoTest {
                 .add(input(hashOf("ghi"), 2, rndBytes(16)))
                 .add(output(pubKey(rndBytes(64), rndBytes(64)), 2000))
                 .build();
-        txDao.saveTx(tx);
 
         // when
-        Tx storedTx = txDao.findTx(tx.getHash());
+        boolean before = txDao.hasTx(tx.getHash());
+        txDao.saveTx(tx);
+        boolean after = txDao.hasTx(tx.getHash());
 
         // then
-        assertThat(storedTx)
-                .isEqualTo(tx);
-
-        assertThat(txDao.all())
-                .hasSize(1)
-                .contains(tx);
+        assertThat(before).isEqualTo(false);
+        assertThat(after).isEqualTo(true);
     }
 
     private byte[] rndBytes(int n) {

@@ -1,5 +1,6 @@
 package bchain.dao.sqlite;
 
+import bchain.dao.BlockDao;
 import bchain.dao.TxDao;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -22,5 +23,10 @@ public class SqliteConfig {
     @Bean
     public TxDao testDao() {
         return new SqliteTxDao();
+    }
+
+    @Bean
+    public BlockDao blockDao() {
+        return new SqliteBlockDao();
     }
 }

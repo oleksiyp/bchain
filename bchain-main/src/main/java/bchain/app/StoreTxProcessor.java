@@ -9,8 +9,7 @@ import static bchain.app.Result.containsSame;
 import static bchain.app.Result.ok;
 import static bchain.app.Result.verificationFailed;
 
-public class StoreTransactionProcessor {
-
+public class StoreTxProcessor {
     @Autowired
     TxDao txDao;
 
@@ -20,7 +19,7 @@ public class StoreTransactionProcessor {
             return verificationFailed();
         }
 
-        if (txDao.findTx(tx.getHash()) != null) {
+        if (txDao.hasTx(tx.getHash())) {
             return containsSame();
         }
 
