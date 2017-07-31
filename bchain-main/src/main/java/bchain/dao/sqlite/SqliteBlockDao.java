@@ -27,6 +27,8 @@ public class SqliteBlockDao implements BlockDao {
 
     @Autowired
     TxDao txDao;
+    public static final PrepareMapper<Hash> HASH_PREPARE_MAPPER = (ps, n, hash) ->
+            ps.setBytes(1, hash.getValues());
 
     @Override
     public boolean hasBlock(Hash hash) {
@@ -40,7 +42,9 @@ public class SqliteBlockDao implements BlockDao {
     @Override
     public void saveBlock(Block block) {
         for (Tx tx : block.getTxs()) {
-            txDao.saveTx(tx);
+            if (!txDao.hasTx(tx.getHash())) {
+                txDao.saveTx(tx);
+            }
         }
 
         jdbcTemplate.update("insert into Block(hash, prevBlockHash, nTxs) " +
@@ -81,22 +85,23 @@ public class SqliteBlockDao implements BlockDao {
                 .map(Hash::hash)
                 .collect(Collectors.toList());
 
+        return allWith(blockHashes);
+    }
 
-        PrepareMapper<Hash> hashInMapper = (ps, n, hash) ->
-                ps.setBytes(1, hash.getValues());
-
+    @Override
+    public List<Block> allWith(List<Hash> hashes) {
         Map<Hash, Hash> prevBlockHashes = jdbcTemplate.queryMapSingleValue(
                 "select prevBlockHash from Block " +
                         "where hash = ?",
-                blockHashes,
-                hashInMapper,
+                hashes,
+                HASH_PREPARE_MAPPER,
                 (rs, n) -> hash(rs.getBytes("prevBlockHash")));
 
         Map<Hash, List<Hash>> inputs = jdbcTemplate.queryMapList(
                 "select txHash from BlockTx " +
                         "where hash = ? order by n",
-                blockHashes,
-                hashInMapper,
+                hashes,
+                HASH_PREPARE_MAPPER,
                 (rs, i) -> hash(rs.getBytes("txHash")));
 
         ArrayList<Hash> txHashesList = new ArrayList<>(inputs
@@ -110,7 +115,7 @@ public class SqliteBlockDao implements BlockDao {
                 .stream()
                 .collect(Collectors.toMap(Tx::getHash, identity()));
 
-        return blockHashes
+        return hashes
                 .stream()
                 .map(hash -> block(
                         hash,
@@ -120,5 +125,28 @@ public class SqliteBlockDao implements BlockDao {
                                 .map(txMap::get)
                                 .collect(Collectors.toList())))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Block> referencingBlocksByTx(Hash txHash) {
+        List<Hash> hashes = jdbcTemplate.query(
+                "select hash from BlockTx " +
+                        "where txHash = ?",
+                (rs, n) -> hash(rs.getBytes("hash")),
+                new Object[] { txHash.getValues() });
+
+        return allWith(hashes);
+    }
+
+    @Override
+    public List<Block> referencingBlocksByBlock(Hash blockHash) {
+        List<Hash> hashes = jdbcTemplate.query(
+                "select hash from Block " +
+                        "where prevBlockHash = ?",
+                (rs, n) -> hash(rs.getBytes("hash")),
+                new Object[] { blockHash.getValues() });
+
+        return allWith(hashes);
+
     }
 }

@@ -1,11 +1,18 @@
-package bchain.app;
+package bchain.app.result;
 
+import bchain.domain.Hash;
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
+@Getter
 public class Result {
     private final boolean ok;
-    private String message;
+    private final String message;
 
     public Result() {
         this.ok = true;
+        this.message = "OK";
     }
 
 
@@ -22,7 +29,12 @@ public class Result {
         return new Result("Same object exists");
     }
 
+    public static Result orphaned() {
+        return new Result("Block orphaned");
+    }
+
     public static Result ok() {
         return new Result();
     }
+
 }

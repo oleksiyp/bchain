@@ -1,21 +1,21 @@
 package bchain.app;
 
+import bchain.app.result.Result;
 import bchain.dao.BlockDao;
 import bchain.domain.Block;
-import bchain.domain.Tx;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import static bchain.app.Result.containsSame;
-import static bchain.app.Result.ok;
-import static bchain.app.Result.verificationFailed;
+import static bchain.app.result.Result.containsSame;
+import static bchain.app.result.Result.ok;
+import static bchain.app.result.Result.verificationFailed;
 
 public class StoreBlockProcessor {
     @Autowired
     BlockDao blockDao;
 
     @Transactional
-    public Result addBlock(Block block) {
+    public Result store(Block block) {
         if (!block.verify()) {
             return verificationFailed();
         }

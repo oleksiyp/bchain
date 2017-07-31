@@ -3,6 +3,8 @@ package bchain.dao.sqlite;
 import bchain.util.ExtendedJdbcTemplate;
 import org.flywaydb.core.Flyway;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
 
@@ -11,21 +13,15 @@ import javax.sql.DataSource;
 import java.io.File;
 
 @Component
+@Import(SqliteConfig.class)
 public class SqliteTestConfig {
-    @Bean
-    public SqliteTxDao txDao() {
-        return new SqliteTxDao();
-    }
-
-    @Bean
-    public SqliteBlockDao blockDao() { return new SqliteBlockDao(); }
 
     @PreDestroy
     public void removeDb() {
         new File("test.db").delete();
     }
 
-    @Bean
+    @Bean @Primary
     public DataSource dataSource() {
         SingleConnectionDataSource ds = new SingleConnectionDataSource();
         ds.setSuppressClose(true);

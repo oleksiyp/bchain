@@ -1,5 +1,6 @@
 package bchain;
 
+import bchain.app.Processor;
 import bchain.app.StoreBlockProcessor;
 import bchain.app.StoreTxProcessor;
 import bchain.domain.Block;
@@ -20,28 +21,15 @@ import static bchain.domain.TxOutput.output;
 @EnableAutoConfiguration
 @ComponentScan
 public class Application {
-
-    @Bean
-    public StoreBlockProcessor storeBlockProcessor() {
-        return new StoreBlockProcessor();
-    }
-
-    @Bean
-    public StoreTxProcessor storeTxProcessor() {
-        return new StoreTxProcessor();
-    }
-
     public static void main(String[] args) {
         ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
 
-        Block block = Block.builder()
-                .add(Tx.builder()
-                        .setCoinbase(true)
-                        .add(output(pubKey(new byte[1], new byte[1]), 2000))
-                        .build())
+        Tx tx = Tx.builder()
+                .setCoinbase(true)
+                .add(output(pubKey(new byte[1], new byte[1]), 2000))
                 .build();
 
-        ctx.getBean(StoreBlockProcessor.class)
-                .addBlock(block);
+        ctx.getBean(Processor.class)
+                .process(tx);
     }
 }

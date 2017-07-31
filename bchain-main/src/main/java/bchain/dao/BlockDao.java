@@ -13,4 +13,10 @@ public interface BlockDao {
     List<Block> all();
 
     List<Block> allMatching(String criterion, Object... args);
+
+    List<Block> allWith(List<Hash> hashes);
+
+    List<Block> referencingBlocksByTx(Hash txHash);
+
+    List<Block> referencingBlocksByBlock(Hash blockHash);
 }

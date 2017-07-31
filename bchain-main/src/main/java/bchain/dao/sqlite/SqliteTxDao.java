@@ -31,6 +31,10 @@ public class SqliteTxDao implements TxDao {
                     rs.getBytes("exponent")),
             rs.getLong("value"));
 
+    public static final PrepareMapper<Hash> HASH_PREPARE_MAPPER = (ps, n, hash) ->
+            ps.setBytes(1, hash.getValues());
+
+
     @Autowired
     ExtendedJdbcTemplate jdbcTemplate;
 
@@ -41,6 +45,19 @@ public class SqliteTxDao implements TxDao {
                 new Object[]{hash.getValues()});
 
         return count == 1;
+    }
+
+    @Override
+    public boolean hasAll(Set<Hash> hashes) {
+        return jdbcTemplate.queryMapSingleValue(
+                "select count(*) as cnt from Tx " +
+                        "where hash = ?",
+                new ArrayList<>(hashes),
+                HASH_PREPARE_MAPPER,
+                (rs, n) -> rs.getInt("cnt"))
+                .values()
+                .stream()
+                .allMatch(x -> x == 1);
     }
 
     @Override
@@ -109,28 +126,25 @@ public class SqliteTxDao implements TxDao {
 
     @Override
     public List<Tx> allWith(List<Hash> hashes) {
-        PrepareMapper<Hash> hashInMapper = (ps, n, hash) ->
-                ps.setBytes(1, hash.getValues());
-
         Map<Hash, Boolean> coinbases = jdbcTemplate.queryMapSingleValue(
                 "select coinbase from Tx " +
                         "where hash = ?",
                 hashes,
-                hashInMapper,
+                HASH_PREPARE_MAPPER,
                 (rs, n) -> rs.getBoolean("coinbase"));
 
         Map<Hash, List<TxInput>> inputs = jdbcTemplate.queryMapList(
                 "select * from TxInput " +
                         "where hash = ? order by n",
                 hashes,
-                hashInMapper,
+                HASH_PREPARE_MAPPER,
                 TX_INPUT_ROW_MAPPER);
 
         Map<Hash, List<TxOutput>> outputs = jdbcTemplate.queryMapList(
                 "select * from TxOutput " +
                         "where hash = ? order by n",
                 hashes,
-                hashInMapper,
+                HASH_PREPARE_MAPPER,
                 TX_OUTPUT_ROW_MAPPER);
 
 
@@ -140,6 +154,17 @@ public class SqliteTxDao implements TxDao {
                         inputs.get(hash),
                         outputs.get(hash)))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Tx> referencingTxs(Hash txHash) {
+        List<Hash> hashes = jdbcTemplate.query(
+                "select hash from TxInput " +
+                        "where prevTxHash = ?",
+                (rs, n) -> hash(rs.getBytes("hash")),
+                new Object[] { txHash.getValues() });
+
+        return allWith(hashes);
     }
 
 }

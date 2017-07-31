@@ -35,3 +35,12 @@ create table BlockTx (
     txHash blob(32) not null,
     PRIMARY KEY (hash, n)
 );
+
+create table OrphanedTx (
+    hash blob(32) primary key
+);
+
+create table OrphanedBlock (
+    hash blob(32) primary key
+);
+

@@ -1,20 +1,21 @@
 package bchain.app;
 
+import bchain.app.result.Result;
 import bchain.dao.TxDao;
 import bchain.domain.Tx;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import static bchain.app.Result.containsSame;
-import static bchain.app.Result.ok;
-import static bchain.app.Result.verificationFailed;
+import static bchain.app.result.Result.containsSame;
+import static bchain.app.result.Result.ok;
+import static bchain.app.result.Result.verificationFailed;
 
 public class StoreTxProcessor {
     @Autowired
     TxDao txDao;
 
     @Transactional
-    public Result addTx(Tx tx) {
+    public Result store(Tx tx) {
         if (!tx.verify()) {
             return verificationFailed();
         }
