@@ -14,7 +14,7 @@ public class StoreTxProcessor {
     TxDao txDao;
 
     @Transactional
-    public Result addTransaction(Tx tx) {
+    public Result addTx(Tx tx) {
         if (!tx.verify()) {
             return verificationFailed();
         }

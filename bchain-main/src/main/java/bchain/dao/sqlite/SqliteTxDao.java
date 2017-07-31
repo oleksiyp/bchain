@@ -91,43 +91,50 @@ public class SqliteTxDao implements TxDao {
                 });
     }
 
+    @Override
     public List<Tx> all() {
         return allMatching("");
     }
 
-    private List<Tx> allMatching(String criterion, Object... args) {
+    @Override
+    public List<Tx> allMatching(String criterion, Object... args) {
         List<Hash> txHashes = jdbcTemplate.queryForList(
                 "select hash from Tx " + criterion, args, byte[].class)
                 .stream()
                 .map(Hash::hash)
                 .collect(Collectors.toList());
 
+        return allWith(txHashes);
+    }
+
+    @Override
+    public List<Tx> allWith(List<Hash> hashes) {
         PrepareMapper<Hash> hashInMapper = (ps, n, hash) ->
                 ps.setBytes(1, hash.getValues());
 
         Map<Hash, Boolean> coinbases = jdbcTemplate.queryMapSingleValue(
                 "select coinbase from Tx " +
                         "where hash = ?",
-                    txHashes,
+                hashes,
                 hashInMapper,
                 (rs, n) -> rs.getBoolean("coinbase"));
 
         Map<Hash, List<TxInput>> inputs = jdbcTemplate.queryMapList(
                 "select * from TxInput " +
                         "where hash = ? order by n",
-                txHashes,
+                hashes,
                 hashInMapper,
                 TX_INPUT_ROW_MAPPER);
 
         Map<Hash, List<TxOutput>> outputs = jdbcTemplate.queryMapList(
                 "select * from TxOutput " +
                         "where hash = ? order by n",
-                txHashes,
+                hashes,
                 hashInMapper,
                 TX_OUTPUT_ROW_MAPPER);
 
 
-        return txHashes.stream()
+        return hashes.stream()
                 .map(hash -> tx(hash,
                         coinbases.get(hash),
                         inputs.get(hash),

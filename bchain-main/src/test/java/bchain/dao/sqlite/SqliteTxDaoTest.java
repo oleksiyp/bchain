@@ -1,7 +1,7 @@
 package bchain.dao.sqlite;
 
 import bchain.domain.Tx;
-import bchain.domain.Hash;
+import bchain.util.RndUtil;
 import org.flywaydb.test.annotation.FlywayTest;
 import org.flywaydb.test.junit.FlywayTestExecutionListener;
 import org.junit.Test;
@@ -13,12 +13,11 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
-import java.util.Random;
-
 import static bchain.domain.Hash.hashOf;
 import static bchain.domain.PubKey.pubKey;
 import static bchain.domain.TxInput.input;
 import static bchain.domain.TxOutput.output;
+import static bchain.util.RndUtil.rndBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -70,10 +69,4 @@ public class SqliteTxDaoTest {
         assertThat(after).isEqualTo(true);
     }
 
-    private byte[] rndBytes(int n) {
-        byte[] bytes = new byte[n];
-        Random rnd = new Random();
-        rnd.nextBytes(bytes);
-        return bytes;
-    }
 }

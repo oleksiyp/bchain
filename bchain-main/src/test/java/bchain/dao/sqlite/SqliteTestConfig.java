@@ -17,6 +17,9 @@ public class SqliteTestConfig {
         return new SqliteTxDao();
     }
 
+    @Bean
+    public SqliteBlockDao blockDao() { return new SqliteBlockDao(); }
+
     @PreDestroy
     public void removeDb() {
         new File("test.db").delete();
@@ -31,7 +34,7 @@ public class SqliteTestConfig {
         return ds;
     }
 
-    @Bean(destroyMethod = "clean")
+    @Bean
     public Flyway flyway(DataSource ds) {
         Flyway flyway = new Flyway();
         flyway.setDataSource(ds);

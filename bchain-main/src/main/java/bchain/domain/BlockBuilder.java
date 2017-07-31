@@ -1,14 +1,12 @@
 package bchain.domain;
 
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BlockBuilder {
     @Getter
-    @Setter
     private Hash prevBlockHash;
 
     @Getter
@@ -16,6 +14,11 @@ public class BlockBuilder {
 
     public BlockBuilder() {
         txs = new ArrayList<>();
+    }
+
+    public BlockBuilder setPrevBlockHash(Hash prevBlockHash) {
+        this.prevBlockHash = prevBlockHash;
+        return this;
     }
 
     public BlockBuilder add(Tx tx) {
