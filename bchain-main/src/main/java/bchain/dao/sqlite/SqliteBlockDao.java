@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static bchain.domain.Block.block;
 import static bchain.domain.Hash.hash;
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 
 public class SqliteBlockDao implements BlockDao {
@@ -125,6 +126,11 @@ public class SqliteBlockDao implements BlockDao {
                                 .map(txMap::get)
                                 .collect(Collectors.toList())))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Block get(Hash from) {
+        return allWith(singletonList(from)).get(0);
     }
 
     @Override

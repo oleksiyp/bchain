@@ -6,12 +6,15 @@ import lombok.ToString;
 
 import java.util.List;
 
+import static bchain.domain.Hash.hashOf;
 import static com.google.common.collect.ImmutableList.copyOf;
 
 @Getter
 @ToString
 @EqualsAndHashCode
 public class Block {
+    public static final Hash GENESIS_HASH = hashOf("abc");
+
     private final Hash hash;
     private final Hash prevBlockHash;
     private final List<Tx> txs;
@@ -33,6 +36,16 @@ public class Block {
     public boolean verify() {
         Hash computedHash = BlockHash.computeHash(prevBlockHash, txs);
 
+        if (isGenesis()) {
+            if (!computedHash.equals(GENESIS_HASH)) {
+                return false;
+            }
+        }
+
         return computedHash.equals(hash);
+    }
+
+    public boolean isGenesis() {
+        return prevBlockHash == null;
     }
 }

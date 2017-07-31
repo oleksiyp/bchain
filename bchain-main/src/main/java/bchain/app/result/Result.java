@@ -7,6 +7,8 @@ import lombok.ToString;
 @ToString
 @Getter
 public class Result {
+    public static final Result NOT_ELECTED = Result.ok();
+
     private final boolean ok;
     private final String message;
 
@@ -37,4 +39,19 @@ public class Result {
         return new Result();
     }
 
+    public static Result genesisFailed() {
+        return new Result("Genesis failed");
+    }
+
+    public static Result consistencyProblem() {
+        return new Result("Consistency problem");
+    }
+
+    public static Result validationFailed() {
+        return new Result("Validation failed");
+    }
+
+    public static Result nextNounce() {
+        return new Result("Next nounce");
+    }
 }

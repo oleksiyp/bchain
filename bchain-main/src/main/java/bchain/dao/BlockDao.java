@@ -16,6 +16,8 @@ public interface BlockDao {
 
     List<Block> allWith(List<Hash> hashes);
 
+    Block get(Hash from);
+
     List<Block> referencingBlocksByTx(Hash txHash);
 
     List<Block> referencingBlocksByBlock(Hash blockHash);
