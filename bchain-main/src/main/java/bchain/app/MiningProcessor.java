@@ -2,15 +2,19 @@ package bchain.app;
 
 import bchain.app.result.Result;
 import bchain.dao.PendingTxDao;
+import bchain.dao.RefsDao;
 import bchain.dao.TxDao;
 import bchain.domain.Block;
 import bchain.domain.BlockBuilder;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
+import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static bchain.app.result.Result.nextNounce;
 import static bchain.app.result.Result.ok;
@@ -25,50 +29,91 @@ public class MiningProcessor implements Runnable {
     @Autowired
     PendingTxDao pendingTxDao;
 
-    volatile Hash baseHash;
-    volatile List<Tx> pendingTxs;
-    volatile boolean breakMining;
+    @Autowired
+    RefsDao refsDao;
 
-    Predicate<Block> blockAcceptor;
+    Lock lock = new ReentrantLock();
+    Condition hasNewerData = lock.newCondition();
+
+    Hash recentBaseHash;
+    List<Tx> recentPendingTxs;
+    long recentVersion;
+
+    @Autowired
+    BlockAcceptor blockAcceptor;
 
     @Override
     public void run() {
-        while (!interrupted()) {
-            while (!breakMining) {
+        try {
+            boolean mined = true;
+            long version = 0;
+            Hash baseHash = null;
+            List<Tx> pendingTxs = null;
+            while (!interrupted()) {
+                lock.lock();
+                try {
+                    if (mined) {
+                        while (!(recentVersion > version
+                                && recentPendingTxs != null
+                                && !recentPendingTxs.isEmpty())) {
+                            hasNewerData.await();
+                        }
+                    }
+
+                    if (recentVersion > version
+                            && recentPendingTxs != null
+                            && !recentPendingTxs.isEmpty()) {
+                        version = recentVersion;
+                        pendingTxs = recentPendingTxs;
+                        baseHash = recentBaseHash;
+                    } else {
+                        continue;
+                    }
+
+                } finally {
+                    lock.unlock();
+                }
+
                 Result miningResult = mine(baseHash,
                         pendingTxs,
                         rndBytes(16));
-                if (miningResult.isOk()) {
-                    // wait
-                }
+
+                mined = miningResult.isOk();
             }
-            breakMining = false;
+        } catch (InterruptedException ex) {
+
         }
     }
 
-    private Result mine(Hash baseHash, List<Tx> pendingTxs, byte[] bytes) {
+    private Result mine(Hash baseHash, List<Tx> pendingTxs, byte[] nounce) {
         BlockBuilder builder = Block.builder();
+//        builder.setNounce(nounce);
+        builder.setPrevBlockHash(baseHash);
         for (Tx tx : pendingTxs) {
             builder.add(tx);
         }
 
         Block newBlock = builder.build();
 
-        if (!blockAcceptor.test(newBlock)) {
+        if (!blockAcceptor.accept(newBlock)) {
             return nextNounce();
         }
         return ok();
     }
 
-    public Result process(Tx tx) {
-        pendingTxs = copyOf(txDao.allWith(pendingTxDao.all()));
-        breakMining = true;
-        return ok();
-    }
+    public Result updateMiningTarget() {
+        Hash master = refsDao.getMaster();
+        List<Tx> pendingTsx = copyOf(txDao.allWith(pendingTxDao.all()));
 
-    public Result process(Block block) {
-        baseHash = block.getHash();
-        breakMining = true;
+        lock.lock();
+        try {
+            recentBaseHash = master;
+            recentPendingTxs = pendingTsx;
+            recentVersion++;
+            hasNewerData.signal();
+        } finally {
+            lock.unlock();
+        }
         return ok();
     }
 }

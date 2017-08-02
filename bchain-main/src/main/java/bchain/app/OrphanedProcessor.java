@@ -116,9 +116,16 @@ public class OrphanedProcessor {
                 .map(Tx::getHash)
                 .collect(Collectors.toSet());
 
-        return orphanedTxDao.isOrphanedAny(referencedTxs) ||
-                !txDao.hasAll(referencedTxs) ||
-                orphanedBlockDao.isOrphaned(block.getPrevBlockHash()) ||
+        if (orphanedTxDao.isOrphanedAny(referencedTxs) ||
+                !txDao.hasAll(referencedTxs)) {
+            return true;
+        }
+
+        if (block.getPrevBlockHash() == null) {
+            return false;
+        }
+
+        return orphanedBlockDao.isOrphaned(block.getPrevBlockHash()) ||
                 !blockDao.hasBlock(block.getPrevBlockHash());
     }
 

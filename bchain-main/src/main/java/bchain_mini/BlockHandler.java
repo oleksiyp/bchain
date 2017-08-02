@@ -41,7 +41,7 @@ public class BlockHandler {
             return null;
     }
 
-    /** process a {@code bchain_mini.Transaction} */
+    /** updateMiningTarget a {@code bchain_mini.Transaction} */
     public void processTx(Transaction tx) {
         blockChain.addTransaction(tx);
     }

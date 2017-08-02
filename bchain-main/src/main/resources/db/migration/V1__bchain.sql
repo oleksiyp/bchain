@@ -44,3 +44,29 @@ create table OrphanedBlock (
     hash blob(32) primary key
 );
 
+create table Refs (
+    name varchar(10) primary key,
+    hash blob(32)
+);
+
+create table UnspentTxOut (
+    hash blob(32) not null,
+    n integer not null,
+    PRIMARY KEY (hash, n)
+);
+
+create table Unspent (
+    modulus blob(64) not null,
+    exponent blob(64) not null,
+    value int8 not null,
+    PRIMARY KEY (modulus, exponent)
+);
+
+create table PendingTx (
+    hash blob(32) primary key
+);
+
+create table BlockLevel (
+    hash blob(32) primary key,
+    level integer not null
+);

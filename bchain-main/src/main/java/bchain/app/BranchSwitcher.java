@@ -34,27 +34,20 @@ public class BranchSwitcher {
         List<Block> toBePushed = new ArrayList<>();
 
         while (fromLevel > toLevel) {
-            Block fromBlock = blockDao.get(from);
-            toBePoped.add(fromBlock);
-            from = fromBlock.getPrevBlockHash();
-            fromLevel--;
-        }
-
-        while (toLevel > fromLevel) {
-            Block block = blockDao.get(to);
-            toBePushed.add(block);
-            to = block.getHash();
-            toLevel--;
-        }
-
-        while (fromLevel > toLevel) {
             Block block = blockDao.get(from);
             toBePoped.add(block);
             from = block.getPrevBlockHash();
             fromLevel--;
         }
 
-        while (!from.equals(to) && fromLevel > 0 && toLevel > 0) {
+        while (toLevel > fromLevel) {
+            Block block = blockDao.get(to);
+            toBePushed.add(block);
+            to = block.getPrevBlockHash();
+            toLevel--;
+        }
+
+        while (!from.equals(to) && fromLevel >= 0 && toLevel >= 0) {
             Block block = blockDao.get(from);
             toBePoped.add(block);
             from = block.getPrevBlockHash();
@@ -62,7 +55,7 @@ public class BranchSwitcher {
 
             block = blockDao.get(to);
             toBePushed.add(block);
-            to = block.getHash();
+            to = block.getPrevBlockHash();
             toLevel--;
         }
 

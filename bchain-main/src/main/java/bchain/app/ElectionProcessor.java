@@ -2,7 +2,7 @@ package bchain.app;
 
 import bchain.app.result.Result;
 import bchain.dao.BlockLevelDao;
-import bchain.dao.MasterBlockDao;
+import bchain.dao.RefsDao;
 import bchain.dao.PendingTxDao;
 import bchain.domain.Block;
 import bchain.domain.Hash;
@@ -17,7 +17,7 @@ import static java.util.Collections.singletonList;
 
 public class ElectionProcessor {
     @Autowired
-    MasterBlockDao masterBlockDao;
+    RefsDao refsDao;
 
     @Autowired
     BlockLevelDao levelDao;
@@ -28,17 +28,25 @@ public class ElectionProcessor {
     @Autowired
     BranchSwitcher branchSwitcher;
 
-    public void process(Tx tx) {
+    public Result process(Tx tx) {
         pendingTxDao.markPending(singletonList(tx.getHash()));
+        return ok();
     }
 
     public Result process(Block block) {
-        Hash master = masterBlockDao.getMaster();
+        Hash master = refsDao.getMaster();
+
+        if (master == null) {
+            pendingTxDao.unmarkPending(
+                    hashes(block.getTxs()));
+            refsDao.setMaster(block.getHash());
+            return ok();
+        }
 
         int masterLevel = levelDao.getLevel(master);
         int level = levelDao.getLevel(block.getHash());
 
-        if (masterLevel <= level) {
+        if (masterLevel >= level) {
             return Result.NOT_ELECTED;
         }
 
@@ -48,14 +56,14 @@ public class ElectionProcessor {
                 popedBlock -> {
                     pendingTxDao.markPending(
                             hashes(popedBlock.getTxs()));
-                    masterBlockDao.setMaster(popedBlock.getPrevBlockHash());
+                    refsDao.setMaster(popedBlock.getPrevBlockHash());
                     return ok();
                 },
 
                 pushedBlock -> {
                     pendingTxDao.unmarkPending(
                             hashes(pushedBlock.getTxs()));
-                    masterBlockDao.setMaster(pushedBlock.getHash());
+                    refsDao.setMaster(pushedBlock.getHash());
                     return ok();
                 });
     }

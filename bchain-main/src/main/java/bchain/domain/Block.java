@@ -37,9 +37,9 @@ public class Block {
         Hash computedHash = BlockHash.computeHash(prevBlockHash, txs);
 
         if (isGenesis()) {
-            if (!computedHash.equals(GENESIS_HASH)) {
-                return false;
-            }
+//            if (!computedHash.equals(GENESIS_HASH)) {
+//                return false;
+//            }
         }
 
         return computedHash.equals(hash);

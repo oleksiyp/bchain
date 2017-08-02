@@ -1,9 +1,6 @@
 package bchain.dao.sqlite;
 
-import bchain.dao.BlockDao;
-import bchain.dao.OrphanedBlockDao;
-import bchain.dao.OrphanedTxDao;
-import bchain.dao.TxDao;
+import bchain.dao.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
@@ -41,4 +38,25 @@ public class SqliteConfig {
     public OrphanedBlockDao orphanedBlockDao() {
         return new SqliteOrphanedBlockDao();
     }
+
+    @Bean
+    public UnspentDao unspentDao() {
+        return new SqliteUnspentDao();
+    }
+
+    @Bean
+    public BlockLevelDao blockLevelDao() {
+        return new SqliteBlockLevelDao();
+    }
+
+    @Bean
+    public PendingTxDao pendingTxDao() {
+        return new SqlitePendingTxDao();
+    }
+
+    @Bean
+    public RefsDao refsDao() {
+        return new SqliteRefsDao();
+    }
+
 }

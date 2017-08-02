@@ -19,4 +19,31 @@ public class ProcessorConfig {
     public OrphanedProcessor orphanedTxProcessor() {
         return new OrphanedProcessor();
     }
+
+    @Bean
+    public BranchSwitcher branchSwitcher() {
+        return new BranchSwitcher();
+    }
+
+    @Bean
+    public UnspentProcessor unspentTxProcessor() {
+        return new UnspentProcessor();
+    }
+
+    @Bean
+    public ElectionProcessor electionProcessor() {
+        return new ElectionProcessor();
+    }
+
+    @Bean
+    public MiningProcessor miningProcessor() {
+        MiningProcessor processor = new MiningProcessor();
+        new Thread(processor,"miner").start();
+        return processor;
+    }
+
+    @Bean
+    public Processor processor() {
+        return new Processor();
+    }
 }

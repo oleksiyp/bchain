@@ -67,7 +67,18 @@ public class Processor {
     }
 
     public void processFurther(Tx tx) {
-        miningProcessor.process(tx);
+        Result result = electionProcessor.process(tx);
+        if (!result.isOk()) {
+            log.info("Error election processing: {}", result.getMessage());
+            return;
+        }
+
+        result = miningProcessor.updateMiningTarget();
+        if (!result.isOk()) {
+            log.info("Error mining processing: {}", result.getMessage());
+            return;
+        }
+
     }
 
     public void processFurther(Block block) {
@@ -86,7 +97,7 @@ public class Processor {
             return;
         }
 
-        result = miningProcessor.process(block);
+        result = miningProcessor.updateMiningTarget();
         if (!result.isOk()) {
             log.warn("Error mining processing: {}", result.getMessage());
             return;

@@ -138,7 +138,7 @@ public class BlockChain {
         block.getTransactions().clear();
         block.getTransactions().addAll(asList(processed));
 
-        // okay then process and addAll it
+        // okay then updateMiningTarget and addAll it
 
         block.getTransactions().forEach(tx -> transactionPool.removeTransaction(tx.getHash()));
 

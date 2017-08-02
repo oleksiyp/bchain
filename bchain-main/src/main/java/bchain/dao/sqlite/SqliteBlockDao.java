@@ -51,7 +51,9 @@ public class SqliteBlockDao implements BlockDao {
         jdbcTemplate.update("insert into Block(hash, prevBlockHash, nTxs) " +
                         "values(?, ?, ?)",
                 block.getHash().getValues(),
-                block.getPrevBlockHash().getValues(),
+                block.getPrevBlockHash() == null
+                        ? null
+                        : block.getPrevBlockHash().getValues(),
                 block.getTxs().size());
 
         jdbcTemplate.batchUpdate("insert into BlockTx(hash, n, txHash) " +
@@ -139,7 +141,7 @@ public class SqliteBlockDao implements BlockDao {
                 "select hash from BlockTx " +
                         "where txHash = ?",
                 (rs, n) -> hash(rs.getBytes("hash")),
-                new Object[] { txHash.getValues() });
+                new Object[]{txHash.getValues()});
 
         return allWith(hashes);
     }
@@ -150,7 +152,7 @@ public class SqliteBlockDao implements BlockDao {
                 "select hash from Block " +
                         "where prevBlockHash = ?",
                 (rs, n) -> hash(rs.getBytes("hash")),
-                new Object[] { blockHash.getValues() });
+                new Object[]{blockHash.getValues()});
 
         return allWith(hashes);
 
