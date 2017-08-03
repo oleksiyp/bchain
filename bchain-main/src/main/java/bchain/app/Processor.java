@@ -5,6 +5,7 @@ import bchain.domain.Block;
 import bchain.domain.Tx;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class Processor {
@@ -26,6 +27,7 @@ public class Processor {
     @Autowired
     MiningProcessor miningProcessor;
 
+    @Transactional
     public void process(Tx inTx) {
         Result result;
         result = storeTxProcessor.store(inTx);

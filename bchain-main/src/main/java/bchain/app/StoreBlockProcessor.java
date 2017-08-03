@@ -14,7 +14,6 @@ public class StoreBlockProcessor {
     @Autowired
     BlockDao blockDao;
 
-    @Transactional
     public Result store(Block block) {
         if (!block.verify()) {
             return verificationFailed();

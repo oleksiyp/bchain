@@ -1,8 +1,9 @@
 package bchain.util;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.RowMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.*;
+import org.springframework.util.StopWatch;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class ExtendedJdbcTemplate extends JdbcTemplate {
     public ExtendedJdbcTemplate() {
     }
@@ -64,4 +66,40 @@ public class ExtendedJdbcTemplate extends JdbcTemplate {
         });
     }
 
+
+//    @Override
+//    public <T> T execute(StatementCallback<T> action) throws DataAccessException {
+//        return super.execute((StatementCallback<T>) (stmt) -> {
+//            StopWatch sw = new StopWatch();
+//            sw.start();
+//            T ret = action.doInStatement(stmt);
+//            sw.stop();
+//            log.info("{} {}", sw.getLastTaskTimeMillis(), stmt);
+//            return ret;
+//        });
+//    }
+//
+//    @Override
+//    public <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) throws DataAccessException {
+//        return super.execute(psc, (stmt) -> {
+//            StopWatch sw = new StopWatch();
+//            sw.start();
+//            T ret = action.doInPreparedStatement(stmt);
+//            sw.stop();
+//            log.info("{} {}", sw.getLastTaskTimeMillis(), stmt);
+//            return ret;
+//        });
+//    }
+//
+//    @Override
+//    public <T> T execute(CallableStatementCreator csc, CallableStatementCallback<T> action) throws DataAccessException {
+//        return super.execute(csc, (stmt) -> {
+//            StopWatch sw = new StopWatch();
+//            sw.start();
+//            T ret = action.doInCallableStatement(stmt);
+//            sw.stop();
+//            log.info("{} {}", sw.getLastTaskTimeMillis(), stmt);
+//            return ret;
+//        });
+//    }
 }

@@ -7,16 +7,18 @@ import bchain.dao.TxDao;
 import bchain.dao.UnspentDao;
 import bchain.domain.*;
 import bchain.util.GraphUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StopWatch;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static bchain.app.result.Result.*;
 import static java.util.function.Function.identity;
 
+@Slf4j
 public class UnspentProcessor {
     @Autowired
     UnspentDao unspentDao;
@@ -87,7 +89,12 @@ public class UnspentProcessor {
         Map<Hash, Tx> referencedTx = referencedTxs(block);
         List<Tx> txList = GraphUtil.topologicalSort(block.getTxs());
 
+        Set<UnspentTxOut> unspentTxOuts = new HashSet<>();
+        Set<UnspentTxOut> removeUnspentTxOuts = new HashSet<>();
+        StopWatch sw = new StopWatch();
         for (Tx tx : txList) {
+            sw.start(tx.getHash().toString());
+            log.info("{}", tx.getHash());
             for (TxInput input : tx.getInputs()) {
 
                 Hash prevTxHash = input.getPrevTxHash();
@@ -96,18 +103,29 @@ public class UnspentProcessor {
                 int n = input.getOutputIndex();
                 TxOutput output = prevTx.getOutputs().get(n);
 
-                spendUnspend(output, n, prevTx, !push);
+                UnspentTxOut unspentTxOut = new UnspentTxOut(prevTxHash, n, output.getAddress(), output.getValue());
+
+                spendUnspend(unspentTxOuts, removeUnspentTxOuts, unspentTxOut, !push);
             }
 
             List<TxOutput> outputs = tx.getOutputs();
             for (int i = 0; i < outputs.size(); i++) {
                 TxOutput output = outputs.get(i);
-                spendUnspend(output, i, tx, push);
-            }
 
+                UnspentTxOut unspentTxOut = new UnspentTxOut(tx.getHash(), i, output.getAddress(), output.getValue());
+
+                spendUnspend(unspentTxOuts, removeUnspentTxOuts, unspentTxOut, push);
+            }
+            sw.stop();
         }
 
+        sw.start("update");
+        unspentDao.spendUnspend(
+                new ArrayList<>(unspentTxOuts),
+                new ArrayList<>(removeUnspentTxOuts));
+        sw.stop();
 
+        log.info("{}", sw);
     }
 
     private Map<Hash, Tx> referencedTxs(Block block) {
@@ -123,14 +141,17 @@ public class UnspentProcessor {
                 .collect(Collectors.toMap(Tx::getHash, identity()));
     }
 
-    private void spendUnspend(TxOutput output, int n, Tx tx, boolean unspend) {
+    private void spendUnspend(Set<UnspentTxOut> unspentTxOuts, Set<UnspentTxOut> removeUnspentTxOuts, UnspentTxOut unspentTxOut, boolean unspend) {
         if (unspend) {
-            unspentDao.addTxOut(tx.getHash(), n);
-            unspentDao.changeUnspent(output.getAddress(), output.getValue());
+            if (!removeUnspentTxOuts.remove(unspentTxOut)) {
+                unspentTxOuts.add(unspentTxOut);
+            }
+            log.info("Unspent +{} for [{}]", new Object[] { unspentTxOut.getValue(), unspentTxOut.getAddress()});
         } else {
-            unspentDao.removeTxOut(tx.getHash(), n);
-            unspentDao.changeUnspent(output.getAddress(), -output.getValue());
+            if (!unspentTxOuts.remove(unspentTxOut)) {
+                removeUnspentTxOuts.add(unspentTxOut);
+            }
+            log.info("Spent -{} for [{}]", new Object[] { unspentTxOut.getValue(), unspentTxOut.getAddress()});
         }
     }
-
 }

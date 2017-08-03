@@ -7,6 +7,7 @@ import bchain.dao.PendingTxDao;
 import bchain.domain.Block;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import static bchain.app.result.Result.ok;
 import static java.util.Collections.singletonList;
 
+@Slf4j
 public class ElectionProcessor {
     @Autowired
     RefsDao refsDao;
@@ -50,6 +52,7 @@ public class ElectionProcessor {
             return Result.NOT_ELECTED;
         }
 
+        log.info("Switching master to {} at level {}", block.getHash(), level);
         return branchSwitcher.switchBranch(
                 master, block.getHash(),
 

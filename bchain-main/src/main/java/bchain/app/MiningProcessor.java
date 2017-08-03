@@ -1,6 +1,7 @@
 package bchain.app;
 
 import bchain.app.result.Result;
+import bchain.dao.BlockLevelDao;
 import bchain.dao.PendingTxDao;
 import bchain.dao.RefsDao;
 import bchain.dao.TxDao;
@@ -9,6 +10,7 @@ import bchain.domain.BlockBuilder;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
 import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import static bchain.util.RndUtil.rndBytes;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static java.lang.Thread.interrupted;
 
+@Slf4j
 public class MiningProcessor implements Runnable {
     @Autowired
     TxDao txDao;
@@ -45,40 +48,31 @@ public class MiningProcessor implements Runnable {
     @Override
     public void run() {
         try {
-            boolean mined = true;
             long version = 0;
             Hash baseHash = null;
             List<Tx> pendingTxs = null;
             while (!interrupted()) {
                 lock.lock();
                 try {
-                    if (mined) {
-                        while (!(recentVersion > version
-                                && recentPendingTxs != null
-                                && !recentPendingTxs.isEmpty())) {
-                            hasNewerData.await();
-                        }
-                    }
-
-                    if (recentVersion > version
+                    while (!(recentVersion > version
                             && recentPendingTxs != null
-                            && !recentPendingTxs.isEmpty()) {
-                        version = recentVersion;
-                        pendingTxs = recentPendingTxs;
-                        baseHash = recentBaseHash;
-                    } else {
-                        continue;
+                            && !recentPendingTxs.isEmpty())) {
+                        hasNewerData.await();
                     }
 
+                    version = recentVersion;
+                    pendingTxs = recentPendingTxs;
+                    baseHash = recentBaseHash;
                 } finally {
                     lock.unlock();
                 }
 
+                log.info("Mining {} txs based on {}", pendingTxs.size(), baseHash);
                 Result miningResult = mine(baseHash,
                         pendingTxs,
                         rndBytes(16));
 
-                mined = miningResult.isOk();
+                miningResult.isOk();
             }
         } catch (InterruptedException ex) {
 

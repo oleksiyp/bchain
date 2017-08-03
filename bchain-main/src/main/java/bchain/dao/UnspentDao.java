@@ -2,11 +2,13 @@ package bchain.dao;
 
 import bchain.domain.Hash;
 import bchain.domain.PubKey;
+import bchain.domain.UnspentTxOut;
+
+import java.util.List;
+import java.util.Set;
 
 public interface UnspentDao {
-    void addTxOut(Hash txHash, int index);
+    long get(PubKey address);
 
-    void removeTxOut(Hash hash, int index);
-
-    void changeUnspent(PubKey address, long value);
+    void spendUnspend(List<UnspentTxOut> unspentTxOuts, List<UnspentTxOut> removeUnspentTxOuts);
 }

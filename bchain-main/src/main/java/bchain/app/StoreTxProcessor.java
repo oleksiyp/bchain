@@ -14,7 +14,6 @@ public class StoreTxProcessor {
     @Autowired
     TxDao txDao;
 
-    @Transactional
     public Result store(Tx tx) {
         if (!tx.verify()) {
             return verificationFailed();
