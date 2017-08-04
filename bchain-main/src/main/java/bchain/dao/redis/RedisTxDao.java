@@ -4,6 +4,7 @@ import bchain.dao.TxDao;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.Set;
 
 public class RedisTxDao implements TxDao {
     @Autowired
-    private RedisTemplate<Hash, Tx> redisTemplate;
+    private RedisOperations<Hash, Tx> redisTemplate;
 
     @Override
     public List<Tx> all() {

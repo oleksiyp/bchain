@@ -1,5 +1,6 @@
 package bchain.dao.redis;
 
+import bchain.dao.BlockDao;
 import bchain.dao.TxDao;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
@@ -90,7 +91,6 @@ public class RedisConfig {
     public TxDao txDao() {
         return new RedisTxDao();
     }
-
 
     protected static class EmbeddedRedis {
         private RedisServer redisServer;
