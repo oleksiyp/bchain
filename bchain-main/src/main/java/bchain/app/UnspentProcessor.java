@@ -7,6 +7,7 @@ import bchain.dao.TxDao;
 import bchain.dao.UnspentDao;
 import bchain.domain.*;
 import bchain.util.GraphUtil;
+import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StopWatch;
@@ -35,6 +36,7 @@ public class UnspentProcessor {
     @Autowired
     BranchSwitcher branchSwitcher;
 
+    @LogExecutionTime
     public Result process(Block newBlock, Predicate<Block> validator) {
         Hash head = refsDao.getHead();
         if (head == null || newBlock.isGenesis()) {
@@ -91,9 +93,7 @@ public class UnspentProcessor {
 
         Set<UnspentTxOut> unspentTxOuts = new HashSet<>();
         Set<UnspentTxOut> removeUnspentTxOuts = new HashSet<>();
-        StopWatch sw = new StopWatch();
         for (Tx tx : txList) {
-            sw.start(tx.getHash().toString());
             log.info("{}", tx.getHash());
             for (TxInput input : tx.getInputs()) {
 
@@ -116,16 +116,11 @@ public class UnspentProcessor {
 
                 spendUnspend(unspentTxOuts, removeUnspentTxOuts, unspentTxOut, push);
             }
-            sw.stop();
         }
 
-        sw.start("update");
         unspentDao.spendUnspend(
                 new ArrayList<>(unspentTxOuts),
                 new ArrayList<>(removeUnspentTxOuts));
-        sw.stop();
-
-        log.info("{}", sw);
     }
 
     private Map<Hash, Tx> referencedTxs(Block block) {

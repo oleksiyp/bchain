@@ -4,9 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import static java.util.Arrays.copyOf;
 
@@ -37,10 +35,23 @@ public class TxInput {
         return new TxInput(prevTxHash, outputIndex, signature);
     }
 
-    public void digest(DataOutputStream out) throws IOException {
-        prevTxHash.digest(out);
-        out.writeInt(outputIndex);
-        out.writeInt(signature.length);
-        out.write(signature);
+    public void digest(DataOutput out) throws IOException {
+        serialize(out);
+    }
+
+    public void serialize(DataOutput dataOut) throws IOException {
+        prevTxHash.serialize(dataOut);
+        dataOut.writeInt(outputIndex);
+        dataOut.writeInt(signature.length);
+        dataOut.write(signature);
+    }
+
+    public static TxInput deserialize(DataInput dataIn) throws IOException {
+        Hash prevTxHash = Hash.deserialize(dataIn);
+        int outputIndex = dataIn.readInt();
+        int len = dataIn.readInt();
+        byte []signature = new byte[len];
+        dataIn.readFully(signature);
+        return new TxInput(prevTxHash, outputIndex, signature);
     }
 }

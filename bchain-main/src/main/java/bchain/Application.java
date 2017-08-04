@@ -2,6 +2,7 @@ package bchain;
 
 import bchain.app.Processor;
 import bchain.domain.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -15,6 +16,7 @@ import static bchain.util.RndUtil.rndBytes;
 
 @EnableAutoConfiguration
 @ComponentScan
+@Slf4j
 public class Application {
 
     @Autowired
@@ -28,9 +30,9 @@ public class Application {
         while (true) {
             Block block;
             while ((block = blockQ.blocks.poll()) != null) {
-                System.out.println(block.getHash() + " " + block.getPrevBlockHash());
+                log.info("{} {}", block.getHash(), block.getPrevBlockHash());
                 for (Tx tx : block.getTxs()) {
-                    System.out.println(tx);
+                    log.info("{}", tx);
                 }
                 processor.process(block);
             }
@@ -44,6 +46,7 @@ public class Application {
             Tx tx = builder.build();
             prev = tx.getHash();
 
+            log.info("New tx {}", tx.getHash());
             processor.process(tx);
         }
     }

@@ -7,6 +7,7 @@ import bchain.dao.PendingTxDao;
 import bchain.domain.Block;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
+import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,11 +31,13 @@ public class ElectionProcessor {
     @Autowired
     BranchSwitcher branchSwitcher;
 
+    @LogExecutionTime
     public Result process(Tx tx) {
         pendingTxDao.markPending(singletonList(tx.getHash()));
         return ok();
     }
 
+    @LogExecutionTime
     public Result process(Block block) {
         Hash master = refsDao.getMaster();
 

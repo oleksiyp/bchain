@@ -1,6 +1,8 @@
 package bchain.dao.sqlite;
 
 import bchain.dao.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
@@ -8,14 +10,18 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 
 @Component
+@ConditionalOnProperty("sqlite.file")
 public class SqliteConfig {
+
+    @Value("${sqlite.file}")
+    String file;
 
     @Bean
     public DataSource dataSource() {
         SingleConnectionDataSource ds = new SingleConnectionDataSource();
         ds.setSuppressClose(true);
         ds.setDriverClassName("org.sqlite.JDBC");
-        ds.setUrl("jdbc:sqlite:bchain.db");
+        ds.setUrl("jdbc:sqlite:" + file);
         return ds;
     }
 

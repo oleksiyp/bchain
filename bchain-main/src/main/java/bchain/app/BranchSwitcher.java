@@ -5,6 +5,7 @@ import bchain.dao.BlockDao;
 import bchain.dao.BlockLevelDao;
 import bchain.domain.Block;
 import bchain.domain.Hash;
+import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StopWatch;
@@ -25,6 +26,7 @@ public class BranchSwitcher {
     @Autowired
     BlockLevelDao blockLevelDao;
 
+    @LogExecutionTime
     public Result switchBranch(Hash from,
                                Hash to,
                                Function<Block, Result> pop,

@@ -9,6 +9,7 @@ import bchain.domain.Block;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
 import bchain.domain.TxInput;
+import bchain.util.LogExecutionTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class OrphanedProcessor {
     @Autowired
     OrphanedBlockDao orphanedBlockDao;
 
+    @LogExecutionTime
     public Result process(Tx tx) {
         if (checkOrphaned(tx)) {
             orphanedTxDao.add(tx.getHash());
@@ -43,6 +45,7 @@ public class OrphanedProcessor {
         return ok();
     }
 
+    @LogExecutionTime
     public Result process(Block block) {
         if (checkOrphaned(block)) {
             orphanedBlockDao.add(block.getHash());

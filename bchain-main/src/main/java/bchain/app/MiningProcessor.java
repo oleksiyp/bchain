@@ -9,7 +9,9 @@ import bchain.domain.Block;
 import bchain.domain.BlockBuilder;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
+import bchain.util.LogExecutionTime;
 import com.google.common.collect.ImmutableList;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -79,6 +81,7 @@ public class MiningProcessor implements Runnable {
         }
     }
 
+    @LogExecutionTime
     private Result mine(Hash baseHash, List<Tx> pendingTxs, byte[] nounce) {
         BlockBuilder builder = Block.builder();
 //        builder.setNounce(nounce);

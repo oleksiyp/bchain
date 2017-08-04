@@ -3,6 +3,7 @@ package bchain.app;
 import bchain.app.result.Result;
 import bchain.domain.Block;
 import bchain.domain.Tx;
+import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class Processor {
     MiningProcessor miningProcessor;
 
     @Transactional
+    @LogExecutionTime
     public void process(Tx inTx) {
         Result result;
         result = storeTxProcessor.store(inTx);

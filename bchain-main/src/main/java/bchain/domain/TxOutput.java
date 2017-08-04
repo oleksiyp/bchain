@@ -5,6 +5,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -23,19 +25,19 @@ public class TxOutput {
         return new TxOutput(address, value);
     }
 
-    public void digest(DataOutputStream dataOut) throws IOException {
-        writeAddress(dataOut);
+    public void digest(DataOutput dataOut) throws IOException {
+        serialize(dataOut);
+    }
+
+    public void serialize(DataOutput dataOut) throws IOException {
+        address.serialize(dataOut);
         dataOut.writeLong(value);
     }
 
-    private void writeAddress(DataOutputStream dataOut) throws IOException {
-        writeBigInt(dataOut, this.address.getModulus());
-        writeBigInt(dataOut, this.address.getExponent());
-    }
 
-    private void writeBigInt(DataOutputStream dataOut, BigInteger val) throws IOException {
-        byte[] exponent = val.toByteArray();
-        dataOut.writeInt(exponent.length);
-        dataOut.write(exponent);
+    public static TxOutput deserialize(DataInput dataIn) throws IOException {
+        return new TxOutput(
+                PubKey.deserialize(dataIn),
+                dataIn.readLong());
     }
 }

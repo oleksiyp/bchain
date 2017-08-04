@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -13,6 +15,7 @@ import java.util.Arrays;
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Hash {
+    public static final Hash ALL = hash("*".getBytes());
     private final byte []hashValue;
 
     public byte[] getValues() {
@@ -58,5 +61,17 @@ public class Hash {
         } else {
             dataOut.write(0);
         }
+    }
+
+    public void serialize(DataOutput dataOut) throws IOException {
+        dataOut.writeInt(hashValue.length);
+        dataOut.write(hashValue);
+    }
+
+    public static Hash deserialize(DataInput dataIn) throws IOException {
+        int len = dataIn.readInt();
+        byte []hash = new byte[len];
+        dataIn.readFully(hash);
+        return hash(hash);
     }
 }

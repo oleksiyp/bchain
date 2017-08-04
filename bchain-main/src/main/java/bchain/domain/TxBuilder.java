@@ -2,6 +2,8 @@ package bchain.domain;
 
 import lombok.Getter;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.List;
 

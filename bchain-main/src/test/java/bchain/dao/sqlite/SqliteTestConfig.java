@@ -21,15 +21,6 @@ public class SqliteTestConfig {
         new File("test.db").delete();
     }
 
-    @Bean @Primary
-    public DataSource dataSource() {
-        SingleConnectionDataSource ds = new SingleConnectionDataSource();
-        ds.setSuppressClose(true);
-        ds.setDriverClassName("org.sqlite.JDBC");
-        ds.setUrl("jdbc:sqlite:test.db");
-        return ds;
-    }
-
     @Bean
     public Flyway flyway(DataSource ds) {
         Flyway flyway = new Flyway();

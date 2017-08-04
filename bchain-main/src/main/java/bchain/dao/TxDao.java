@@ -9,8 +9,6 @@ import java.util.Set;
 public interface TxDao {
     List<Tx> all();
 
-    List<Tx> allMatching(String criterion, Object... args);
-
     List<Tx> allWith(List<Hash> hashes);
 
     boolean hasTx(Hash hash);

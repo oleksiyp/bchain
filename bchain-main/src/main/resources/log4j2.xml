@@ -2,15 +2,12 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattenr="%40c{1}    %msg%n %throwable{short}"/>
+            <PatternLayout pattern="%40c{1}    %msg%n %throwable{short}"/>
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="info">
+        <Root level="trace">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="org.springframework.jdbc.core.JdbcTemplate" level="TRACE">
-            <Appender-Ref ref="Console" />
-        </Logger>
     </Loggers>
 </Configuration>

@@ -113,7 +113,6 @@ public class SqliteTxDao implements TxDao {
         return allMatching("");
     }
 
-    @Override
     public List<Tx> allMatching(String criterion, Object... args) {
         List<Hash> txHashes = jdbcTemplate.queryForList(
                 "select hash from Tx " + criterion, args, byte[].class)
