@@ -27,7 +27,7 @@ public class Result {
         return new Result("Verification failed");
     }
 
-    public static Result containsSame() {
+    public static Result duplicated() {
         return new Result("Same object exists");
     }
 

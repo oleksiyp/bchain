@@ -16,6 +16,9 @@ public class SqliteRefsDao implements RefsDao {
     @Autowired
     ExtendedJdbcTemplate jdbcTemplate;
 
+    @Autowired
+    SqliteBlockDao blockDao;
+
     @Override
     public Hash getHead() {
         return getRef(HEAD_REF);
@@ -37,8 +40,8 @@ public class SqliteRefsDao implements RefsDao {
     }
 
     private Hash getRef(String refName) {
-        List<Hash> hashes = jdbcTemplate.query("select hash from Refs where name = ?",
-                (rs, i) -> hash(rs.getBytes(1)),
+        List<Hash> hashes = jdbcTemplate.query("select blockId from Refs where name = ?",
+                (rs, i) -> blockDao.blockHash(rs.getLong(1)),
                 refName);
 
         if (hashes.isEmpty()) {
@@ -51,7 +54,7 @@ public class SqliteRefsDao implements RefsDao {
     }
 
     private void setRef(String refName, Hash hash) {
-        jdbcTemplate.update("insert or replace into Refs(hash, name) values (?, ?)",
-                hash.getValues(), refName);
+        jdbcTemplate.update("insert or replace into Refs(blockId, name) values (?, ?)",
+                blockDao.blockId(hash), refName);
     }
 }

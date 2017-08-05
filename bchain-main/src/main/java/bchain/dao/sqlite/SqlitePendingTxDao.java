@@ -2,6 +2,7 @@ package bchain.dao.sqlite;
 
 import bchain.dao.PendingTxDao;
 import bchain.domain.Hash;
+import bchain.domain.Tx;
 import bchain.util.ExtendedJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -9,6 +10,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static bchain.domain.Hash.hash;
@@ -18,14 +20,17 @@ public class SqlitePendingTxDao implements PendingTxDao {
     @Autowired
     ExtendedJdbcTemplate jdbcTemplate;
 
+    @Autowired
+    SqliteTxDao txDao;
+
     @Override
     public void markPending(List<Hash> txs) {
-        jdbcTemplate.batchUpdate("insert into PendingTx(hash) values (?)",
+        jdbcTemplate.batchUpdate("insert into PendingTx(txId) values (?)",
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        Hash hash = txs.get(i);
-                        ps.setBytes(1, hash.getValues());
+                        long id = txDao.txId(txs.get(i));
+                        ps.setLong(1, id);
                     }
 
                     @Override
@@ -37,12 +42,12 @@ public class SqlitePendingTxDao implements PendingTxDao {
 
     @Override
     public void unmarkPending(List<Hash> txs) {
-        int[] nDeleted = jdbcTemplate.batchUpdate("delete from PendingTx where hash = ?",
+        int[] nDeleted = jdbcTemplate.batchUpdate("delete from PendingTx where txId = ?",
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        Hash hash = txs.get(i);
-                        ps.setBytes(1, hash.getValues());
+                        long id = txDao.txId(txs.get(i));
+                        ps.setLong(1, id);
                     }
 
                     @Override
@@ -56,8 +61,10 @@ public class SqlitePendingTxDao implements PendingTxDao {
     }
 
     @Override
-    public List<Hash> all() {
-        return jdbcTemplate.query("select hash from PendingTx",
-                (rs, i) -> hash(rs.getBytes(1)));
+    public List<Tx> allTx() {
+        List<Optional<Long>> ids = jdbcTemplate.query("select txId from PendingTx",
+                (rs, i) -> Optional.of(rs.getLong(1)));
+        return txDao.allWithIds(ids);
     }
+
 }

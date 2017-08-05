@@ -10,5 +10,5 @@ public interface PendingTxDao {
 
     void unmarkPending(List<Hash> txs);
 
-    List<Hash> all();
+    List<Tx> allTx();
 }

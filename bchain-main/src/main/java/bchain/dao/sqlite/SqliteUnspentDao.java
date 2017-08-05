@@ -19,66 +19,54 @@ public class SqliteUnspentDao implements UnspentDao {
     @Autowired
     ExtendedJdbcTemplate jdbcTemplate;
 
+    @Autowired
+    SqliteTxDao txDao;
+
 
 
 //    @Override
 //    public void changeUnspent(PubKey address, long value) {
-//        jdbcTemplate.update("insert or replace into Unspent(modulus, exponent, value) values (?, ?, " +
-//                        "ifnull((select value from Unspent where modulus = ? and exponent = ?), 0) + ?" +
-//                        ")",
-//                ps -> {
-//                    byte[] modulusBytes = address.getModulus().toByteArray();
-//                    byte[] exponentBytes = address.getExponent().toByteArray();
-//                    ps.setBytes(1, modulusBytes);
-//                    ps.setBytes(2, exponentBytes);
-//                    ps.setBytes(3, modulusBytes);
-//                    ps.setBytes(4, exponentBytes);
-//                    ps.setLong(5, value);
-//                });
 //    }
 
     @Override
     public long get(PubKey address) {
-        return 0;
-//        byte[] modulusBytes = address.getModulus().toByteArray();
-//        byte[] exponentBytes = address.getExponent().toByteArray();
-//
-//        return jdbcTemplate.queryForObject("select ifnull(select value from Unspent where modulus = ? and exponent = ?, 0)",
-//                Long.class, modulusBytes, exponentBytes);
+        return jdbcTemplate.queryForObject(
+                "select ifnull(select value from Unspent where addressId = ?, 0)",
+                Long.class, txDao.addressId(address));
     }
 
     @Override
-    public void spendUnspend(List<UnspentTxOut> unspentTxOuts, List<UnspentTxOut> removeUnspentTxOuts) {
+    public void spendUnspend(List<UnspentTxOut> add,
+                             List<UnspentTxOut> remove) {
 
-
-        jdbcTemplate.batchUpdate("insert into UnspentTxOut(hash, n) values (?, ?)",
+        jdbcTemplate.batchUpdate("insert into UnspentTxOut(txId, n) values (?, ?)",
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        UnspentTxOut unspentTxOut = unspentTxOuts.get(i);
-                        ps.setBytes(1, unspentTxOut.getHash().getValues());
+                        UnspentTxOut unspentTxOut = add.get(i);
+                        ps.setLong(1, txDao.txId(unspentTxOut.getHash()));
                         ps.setInt(2, unspentTxOut.getN());
                     }
 
                     @Override
                     public int getBatchSize() {
-                        return unspentTxOuts.size();
+                        return add.size();
                     }
                 });
 
 
-        int[] nDeleted = jdbcTemplate.batchUpdate("delete from UnspentTxOut where hash = ? and n = ?",
+        int[] nDeleted = jdbcTemplate.batchUpdate("delete from UnspentTxOut where txId = ? and n = ?",
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        UnspentTxOut unspentTxOut = removeUnspentTxOuts.get(i);
-                        ps.setBytes(1, unspentTxOut.getHash().getValues());
+                        UnspentTxOut unspentTxOut = remove.get(i);
+                        ps.setLong(1, txDao.txId(unspentTxOut.getHash()));
                         ps.setInt(2, unspentTxOut.getN());
                     }
 
                     @Override
                     public int getBatchSize() {
-                        return removeUnspentTxOuts.size();
+                        return remove.size();
                     }
                 });
 
@@ -86,5 +74,31 @@ public class SqliteUnspentDao implements UnspentDao {
                 .allMatch(n -> n == 1)) {
             throw new RuntimeException("Failed to remove unspent transaction out");
         }
+
+        changeUnsent(add, 1);
+        changeUnsent(remove, -1);
+    }
+
+    private void changeUnsent(List<UnspentTxOut> add, long mult) {
+        jdbcTemplate.batchUpdate(
+                "insert or replace into Unspent(addressId, value) values (?, " +
+                        "ifnull((select value from Unspent where addressId = ?), 0) + ?" +
+                        ")",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+
+                        UnspentTxOut txOut = add.get(i);
+                        long addressId = txDao.addressId(txOut.getAddress());
+                        ps.setLong(1, addressId);
+                        ps.setLong(2, addressId);
+                        ps.setLong(3, txOut.getValue() * mult);
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return add.size();
+                    }
+                });
     }
 }

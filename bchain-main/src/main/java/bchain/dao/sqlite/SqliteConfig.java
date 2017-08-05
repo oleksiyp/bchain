@@ -8,6 +8,7 @@ import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.util.function.Supplier;
 
 @Component
 @ConditionalOnProperty("sqlite.file")
@@ -63,6 +64,10 @@ public class SqliteConfig {
     @Bean
     public RefsDao refsDao() {
         return new SqliteRefsDao();
+    }
+
+    public static Supplier<RuntimeException> error(String msg) {
+        return () -> new RuntimeException(msg);
     }
 
 }

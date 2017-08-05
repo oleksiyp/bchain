@@ -1,6 +1,9 @@
 package bchain.dao.sqlite;
 
-import bchain.domain.Block;
+import bchain.dao.OrphanedTxDao;
+import bchain.dao.TxDao;
+import bchain.domain.Hash;
+import bchain.domain.Tx;
 import org.flywaydb.test.annotation.FlywayTest;
 import org.flywaydb.test.junit.FlywayTestExecutionListener;
 import org.junit.Test;
@@ -14,62 +17,43 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {SqliteTestConfig.class, JdbcTemplateAutoConfiguration.class})
 @TestExecutionListeners(value = {DependencyInjectionTestExecutionListener.class, FlywayTestExecutionListener.class})
 @TestPropertySource(properties = "sqlite.file=test.db")
-public class SqliteBlockDaoTest {
+public class SqliteOrphanedTxDaoTest {
     @Autowired
-    SqliteBlockDao blockDao;
+    TxDao txDao;
+
+    @Autowired
+    OrphanedTxDao orphanedTxDao;
 
     @Test
     @FlywayTest
-    public void hasBlock() throws Exception {
+    public void addRemove() throws Exception {
         // given
-        Block block = TestObjects.TEST_BLOCK1;
+        Tx tx = TestObjects.TEST_TX1;
+        Hash hash = tx.getHash();
+        txDao.saveTx(tx);
 
         // when
-        boolean before = blockDao.hasBlock(block.getHash());
-        blockDao.saveBlock(block);
-        boolean after = blockDao.hasBlock(block.getHash());
+        boolean beforeAdd = orphanedTxDao.isOrphaned(hash);
+        orphanedTxDao.add(hash);
+        boolean afterAdd = orphanedTxDao.isOrphaned(hash);
+        orphanedTxDao.add(hash);
+        boolean afterAdd2 = orphanedTxDao.isOrphaned(hash);
+        orphanedTxDao.remove(hash);
+        boolean afterRemove = orphanedTxDao.isOrphaned(hash);
+        orphanedTxDao.remove(hash);
+        boolean afterRemove2 = orphanedTxDao.isOrphaned(hash);
 
         // then
-        assertThat(before).isEqualTo(false);
-        assertThat(after).isEqualTo(true);
+        assertThat(beforeAdd).isFalse();
+        assertThat(afterAdd).isTrue();
+        assertThat(afterAdd2).isTrue();
+        assertThat(afterRemove).isFalse();
+        assertThat(afterRemove2).isFalse();
     }
-
-    @Test
-    @FlywayTest
-    public void saveBlock() throws Exception {
-        // given
-        Block block = TestObjects.TEST_BLOCK1;
-
-        // when
-        blockDao.saveBlock(block);
-
-        // then
-        assertThat(blockDao.all())
-                .hasSize(1)
-                .contains(block);
-    }
-
-    @Test
-    @FlywayTest
-    public void saveTwoBlocks() throws Exception {
-        // given
-        Block block = TestObjects.TEST_BLOCK1;
-        Block block2 = TestObjects.TEST_BLOCK2;
-
-        // when
-        blockDao.saveBlock(block);
-        blockDao.saveBlock(block2);
-
-        // then
-        assertThat(blockDao.all())
-                .hasSize(2)
-                .contains(block, block2);
-    }
-
-
 }

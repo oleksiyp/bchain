@@ -15,7 +15,7 @@ public interface TxDao {
 
     boolean hasAll(Set<Hash> hashes);
 
-    void saveTx(Tx transaction);
+    boolean saveTx(Tx transaction);
 
     List<Tx> referencingTxs(Hash txHash);
 }

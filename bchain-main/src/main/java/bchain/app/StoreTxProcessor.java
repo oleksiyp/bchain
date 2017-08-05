@@ -5,9 +5,8 @@ import bchain.dao.TxDao;
 import bchain.domain.Tx;
 import bchain.util.LogExecutionTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
-import static bchain.app.result.Result.containsSame;
+import static bchain.app.result.Result.duplicated;
 import static bchain.app.result.Result.ok;
 import static bchain.app.result.Result.verificationFailed;
 
@@ -21,11 +20,9 @@ public class StoreTxProcessor {
             return verificationFailed();
         }
 
-        if (txDao.hasTx(tx.getHash())) {
-            return containsSame();
+        if (!txDao.saveTx(tx)) {
+            return duplicated();
         }
-
-        txDao.saveTx(tx);
 
         return ok();
     }

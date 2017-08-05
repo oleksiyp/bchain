@@ -100,7 +100,7 @@ public class MiningProcessor implements Runnable {
 
     public Result updateMiningTarget() {
         Hash master = refsDao.getMaster();
-        List<Tx> pendingTsx = copyOf(txDao.allWith(pendingTxDao.all()));
+        List<Tx> pendingTsx = copyOf(pendingTxDao.allTx());
 
         lock.lock();
         try {
