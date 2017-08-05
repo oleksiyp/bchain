@@ -2,7 +2,7 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%40c{1}    %msg%n %throwable{short}"/>
+            <PatternLayout pattern="%40c{1}    %msg%n%throwable{short}"/>
         </Console>
     </Appenders>
     <Loggers>

@@ -2,8 +2,6 @@ package bchain.domain;
 
 import lombok.Getter;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +21,7 @@ public class TxBuilder {
     }
 
     public Tx build() {
-        Hash hash = TxHash.computeHash(coinbase, inputs, outputs);
+        Hash hash = Crypto.computeHash(coinbase, inputs, outputs);
 
         return tx(hash, coinbase, inputs, outputs);
     }

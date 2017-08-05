@@ -6,6 +6,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ProcessorConfig {
     @Bean
+    public VerificationProcessor verificationProcessor() {
+        return new VerificationProcessor();
+    }
+
+    @Bean
     public StoreTxProcessor storeTxProcessor() {
         return new StoreTxProcessor();
     }
@@ -23,6 +28,11 @@ public class ProcessorConfig {
     @Bean
     public BranchSwitcher branchSwitcher() {
         return new BranchSwitcher();
+    }
+
+    @Bean
+    public ValidationProcessor validationProcessor() {
+        return new ValidationProcessor();
     }
 
     @Bean

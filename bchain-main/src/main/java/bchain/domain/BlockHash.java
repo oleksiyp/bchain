@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 import java.util.List;
 
 public class BlockHash {
-    public static Hash computeHash(Hash prevBlockHash, List<Tx> txs) {
+    public static Hash computeBlockHash(Hash prevBlockHash, List<Tx> txs) {
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              DataOutputStream dataOut = new DataOutputStream(byteOut)) {
 

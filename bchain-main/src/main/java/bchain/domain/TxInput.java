@@ -6,6 +6,7 @@ import lombok.ToString;
 
 import java.io.*;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.copyOf;
 
 @ToString
@@ -32,7 +33,10 @@ public class TxInput {
     }
 
     public static TxInput input(Hash prevTxHash, int outputIndex, byte[] signature) {
-        return new TxInput(prevTxHash, outputIndex, signature);
+        return new TxInput(
+                checkNotNull(prevTxHash),
+                outputIndex,
+                checkNotNull(signature));
     }
 
     public void digest(DataOutput out) throws IOException {

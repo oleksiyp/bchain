@@ -42,8 +42,10 @@ public class ElectionProcessor {
         Hash master = refsDao.getMaster();
 
         if (master == null) {
-            pendingTxDao.unmarkPending(
-                    hashes(block.getTxs()));
+            if (!block.isGenesis()) {
+                pendingTxDao.unmarkPending(
+                        hashes(block.getTxs()));
+            }
             refsDao.setMaster(block.getHash());
             return ok();
         }

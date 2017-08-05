@@ -27,6 +27,19 @@ public class Application {
 
     private void run() {
         Hash prev = null;
+
+        Tx base = Tx.builder()
+                .setCoinbase(true)
+                .add(output(pubKey(rndBytes(10), rndBytes(10)), 20))
+                .build();
+
+        Block genesisBlock = Block.builder()
+                .add(base)
+                .build();
+
+        blockQ.blocks.add(genesisBlock);
+        prev = base.getHash();
+
         while (true) {
             Block block;
             while ((block = blockQ.blocks.poll()) != null) {
@@ -36,14 +49,10 @@ public class Application {
                 }
                 processor.process(block);
             }
-            TxBuilder builder = Tx.builder();
-            if (prev != null) {
-                builder.add(input(prev, 0, rndBytes(10)));
-            } else {
-                builder.setCoinbase(true);
-            }
-            builder.add(output(pubKey(rndBytes(10), rndBytes(10)), 20));
-            Tx tx = builder.build();
+            Tx tx = Tx.builder()
+                    .add(input(prev, 0, rndBytes(10)))
+                    .add(output(pubKey(rndBytes(10), rndBytes(10)), 20))
+                    .build();
             prev = tx.getHash();
 
             log.info("New tx {}", tx.getHash());

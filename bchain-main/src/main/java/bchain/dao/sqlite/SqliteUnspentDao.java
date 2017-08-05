@@ -3,6 +3,7 @@ package bchain.dao.sqlite;
 import bchain.dao.UnspentDao;
 import bchain.domain.Hash;
 import bchain.domain.PubKey;
+import bchain.domain.TxOutput;
 import bchain.domain.UnspentTxOut;
 import bchain.util.ExtendedJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,10 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
+
+import static bchain.domain.PubKey.pubKey;
+import static java.util.stream.IntStream.of;
 
 
 public class SqliteUnspentDao implements UnspentDao {
@@ -29,7 +32,7 @@ public class SqliteUnspentDao implements UnspentDao {
 //    }
 
     @Override
-    public long get(PubKey address) {
+    public long unspentAmount(PubKey address) {
         return jdbcTemplate.queryForObject(
                 "select ifnull(select value from Unspent where addressId = ?, 0)",
                 Long.class, txDao.addressId(address));
@@ -38,6 +41,25 @@ public class SqliteUnspentDao implements UnspentDao {
     @Override
     public void spendUnspend(List<UnspentTxOut> add,
                              List<UnspentTxOut> remove) {
+
+        int[] nDeleted = jdbcTemplate.batchUpdate("delete from UnspentTxOut where txId = ? and n = ?",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        UnspentTxOut unspentTxOut = remove.get(i);
+                        ps.setLong(1, txDao.txId(unspentTxOut.getHash()));
+                        ps.setInt(2, unspentTxOut.getN());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return remove.size();
+                    }
+                });
+
+        if (!of(nDeleted).allMatch(n -> n == 1)) {
+            throw new RuntimeException("Failed to remove unspent transaction out");
+        }
 
         jdbcTemplate.batchUpdate("insert into UnspentTxOut(txId, n) values (?, ?)",
                 new BatchPreparedStatementSetter() {
@@ -55,28 +77,36 @@ public class SqliteUnspentDao implements UnspentDao {
                 });
 
 
-        int[] nDeleted = jdbcTemplate.batchUpdate("delete from UnspentTxOut where txId = ? and n = ?",
-                new BatchPreparedStatementSetter() {
-                    @Override
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        UnspentTxOut unspentTxOut = remove.get(i);
-                        ps.setLong(1, txDao.txId(unspentTxOut.getHash()));
-                        ps.setInt(2, unspentTxOut.getN());
-                    }
 
-                    @Override
-                    public int getBatchSize() {
-                        return remove.size();
-                    }
-                });
-
-        if (!IntStream.of(nDeleted)
-                .allMatch(n -> n == 1)) {
-            throw new RuntimeException("Failed to remove unspent transaction out");
-        }
 
         changeUnsent(add, 1);
         changeUnsent(remove, -1);
+    }
+
+    @Override
+    public UnspentTxOut get(Hash hash, int outputIndex) {
+        List<UnspentTxOut> output = jdbcTemplate.query(
+                "select addr.modulus, addr.exponent, txOut.value " +
+                        "from UnspentTxOut unspentTxOut " +
+                        "join TxOutput txOut " +
+                        "on unspentTxOut.txId = txOut.txId " +
+                        "and unspentTxOut.n = txOut.n " +
+                        "join Address addr " +
+                        "on txOut.addressId = addr.addressId " +
+                        "where txOut.txId = ? and txOut.n = ?",
+                (rs, rowNum) -> new UnspentTxOut(
+                        hash,
+                        outputIndex,
+                        pubKey(rs.getBytes("modulus"),
+                                rs.getBytes("exponent")),
+                        rs.getLong("value")),
+                txDao.txId(hash), outputIndex);
+
+        if (output.isEmpty()) {
+            return null;
+        } else {
+            return output.get(0);
+        }
     }
 
     private void changeUnsent(List<UnspentTxOut> add, long mult) {

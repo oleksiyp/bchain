@@ -1,5 +1,7 @@
 package bchain.domain;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -15,7 +17,6 @@ import java.util.Arrays;
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Hash {
-    public static final Hash ALL = hash("*".getBytes());
     private final byte []hashValue;
 
     public byte[] getValues() {
@@ -45,14 +46,10 @@ public class Hash {
         return hashOf(str.getBytes());
     }
 
+    public static final HashFunction HASH_FUNCTION = Hashing.murmur3_128();
+
     public static Hash hashOf(byte[] bytes) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(bytes);
-            return hash(digest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return hash(HASH_FUNCTION.hashBytes(bytes).asBytes());
     }
 
     public static void digest(Hash hash, DataOutputStream dataOut) throws IOException {

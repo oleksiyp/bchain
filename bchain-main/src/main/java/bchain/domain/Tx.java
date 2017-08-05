@@ -1,5 +1,6 @@
 package bchain.domain;
 
+import com.google.common.base.Preconditions;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -8,7 +9,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static bchain.domain.TxHash.computeHash;
+import static bchain.domain.Crypto.computeHash;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.google.common.collect.ImmutableList.of;
 
@@ -37,12 +39,6 @@ public class Tx {
         this.outputs = copyOf(outputs);
     }
 
-    public boolean verify() {
-        Hash computedHash = computeHash(coinbase, inputs, outputs);
-
-        return computedHash.equals(this.hash);
-    }
-
     public static TxBuilder builder() {
         return new TxBuilder();
     }
@@ -51,7 +47,12 @@ public class Tx {
                         boolean coinbase,
                         List<TxInput> inputs,
                         List<TxOutput> outputs) {
-        return new Tx(hash, coinbase, inputs, outputs);
+
+        return new Tx(
+                checkNotNull(hash),
+                coinbase,
+                checkNotNull(inputs),
+                checkNotNull(outputs));
     }
 
     public void digest(DataOutputStream dataOut) throws IOException {

@@ -72,7 +72,7 @@ public class SqliteBlockDao implements BlockDao {
 
 
     @Override
-    public void saveBlock(Block block) {
+    public boolean saveBlock(Block block) {
         Map<Hash, Long> txIds = new HashMap<>();
         for (Tx tx : block.getTxs()) {
             txDao.saveTx(tx);
@@ -80,7 +80,7 @@ public class SqliteBlockDao implements BlockDao {
                     txDao.txId(tx.getHash()));
         }
 
-        jdbcTemplate.update("insert or ignore into Block(hash, prevBlockHash, nTxs) " +
+        int nAdded = jdbcTemplate.update("insert or ignore into Block(hash, prevBlockHash, nTxs) " +
                         "values(?, ?, ?)",
                 block.getHash().getValues(),
                 block.getPrevBlockHash() == null
@@ -106,6 +106,8 @@ public class SqliteBlockDao implements BlockDao {
                         return block.getTxs().size();
                     }
                 });
+
+        return nAdded == 1;
     }
 
     @Override

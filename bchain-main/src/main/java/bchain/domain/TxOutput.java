@@ -11,6 +11,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static lombok.AccessLevel.PRIVATE;
 
 @Getter
@@ -22,7 +23,9 @@ public class TxOutput {
     private final long value;
 
     public static TxOutput output(PubKey address, long value) {
-        return new TxOutput(address, value);
+        return new TxOutput(
+                checkNotNull(address),
+                value);
     }
 
     public void digest(DataOutput dataOut) throws IOException {

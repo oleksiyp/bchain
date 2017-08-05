@@ -1,6 +1,5 @@
 package bchain.app.result;
 
-import bchain.domain.Hash;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -23,8 +22,8 @@ public class Result {
         this.message = message;
     }
 
-    public static Result verificationFailed() {
-        return new Result("Verification failed");
+    public static Result verificationFailed(String msg) {
+        return new Result("Verification failed: " + msg);
     }
 
     public static Result duplicated() {
@@ -47,8 +46,8 @@ public class Result {
         return new Result("Consistency problem");
     }
 
-    public static Result validationFailed() {
-        return new Result("Validation failed");
+    public static Result validationFailed(String msg) {
+        return new Result("Validation failed: " + msg);
     }
 
     public static Result nextNounce() {

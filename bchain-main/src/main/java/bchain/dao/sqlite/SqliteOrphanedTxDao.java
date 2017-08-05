@@ -6,10 +6,7 @@ import bchain.domain.Hash;
 import bchain.util.ExtendedJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static bchain.domain.Hash.hash;
@@ -37,12 +34,20 @@ public class SqliteOrphanedTxDao implements OrphanedTxDao {
 
     @Override
     public boolean isOrphanedAny(Set<Hash> hashes) {
+        List<Long> ids = hashes.stream()
+                .map(txDao::txIdOpt)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+
+        if (ids.size() != hashes.size()) {
+            return false;
+        }
+
         return jdbcTemplate.queryMapSingleValue(
                 "select count(*) as cnt from OrphanedTx " +
                         "where txId = ?",
-                hashes.stream()
-                        .map(txDao::txId)
-                        .collect(Collectors.toList()),
+                ids,
                 SqliteTxDao.ID_PREPARE_MAPPER,
                 (rs, n) -> rs.getInt("cnt"))
                 .values()

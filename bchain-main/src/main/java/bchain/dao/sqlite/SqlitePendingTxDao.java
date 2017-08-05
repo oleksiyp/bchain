@@ -56,7 +56,7 @@ public class SqlitePendingTxDao implements PendingTxDao {
                     }
                 });
         if (!of(nDeleted).allMatch(deleted -> deleted == 1)) {
-            throw new RuntimeException("not all pending transactions deleted");
+            throw new RuntimeException("pending transaction not found");
         }
     }
 

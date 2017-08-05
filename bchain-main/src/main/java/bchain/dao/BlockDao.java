@@ -8,7 +8,7 @@ import java.util.List;
 public interface BlockDao {
     boolean hasBlock(Hash hash);
 
-    void saveBlock(Block block);
+    boolean saveBlock(Block block);
 
     List<Block> all();
 

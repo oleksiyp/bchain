@@ -33,18 +33,6 @@ public class Block {
         return new BlockBuilder();
     }
 
-    public boolean verify() {
-        Hash computedHash = BlockHash.computeHash(prevBlockHash, txs);
-
-        if (isGenesis()) {
-//            if (!computedHash.equals(GENESIS_HASH)) {
-//                return false;
-//            }
-        }
-
-        return computedHash.equals(hash);
-    }
-
     public boolean isGenesis() {
         return prevBlockHash == null;
     }

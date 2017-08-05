@@ -11,7 +11,6 @@ import bchain.domain.Tx;
 import bchain.domain.TxInput;
 import bchain.util.LogExecutionTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

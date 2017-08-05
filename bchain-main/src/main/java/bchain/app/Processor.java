@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class Processor {
     @Autowired
+    VerificationProcessor verificationProcessor;
+
+    @Autowired
     StoreTxProcessor storeTxProcessor;
 
     @Autowired
@@ -18,6 +21,9 @@ public class Processor {
 
     @Autowired
     OrphanedProcessor orphanedProcessor;
+
+    @Autowired
+    ValidationProcessor validationProcessor;
 
     @Autowired
     UnspentProcessor unspentProcessor;
@@ -32,6 +38,12 @@ public class Processor {
     @LogExecutionTime
     public void process(Tx inTx) {
         Result result;
+        result = verificationProcessor.verify(inTx);
+        if (!result.isOk()) {
+            log.warn("Error storing: {}", result.getMessage());
+            return;
+        }
+
         result = storeTxProcessor.store(inTx);
         if (!result.isOk()) {
             log.warn("Error storing: {}", result.getMessage());
@@ -50,8 +62,16 @@ public class Processor {
                 this::processFurther);
     }
 
+    @Transactional
+    @LogExecutionTime
     public void process(Block inBlock) {
         Result result;
+        result = verificationProcessor.verify(inBlock);
+        if (!result.isOk()) {
+            log.warn("Error storing: {}", result.getMessage());
+            return;
+        }
+
         result = storeBlockProcessor.store(inBlock);
         if (!result.isOk()) {
             log.warn("Error storing: {}", result.getMessage());
@@ -86,7 +106,8 @@ public class Processor {
     }
 
     public void processFurther(Block block) {
-        Result result = unspentProcessor.process(block, this::validate);
+        Result result = unspentProcessor.process(block,
+                validationProcessor::validate);
         if (!result.isOk()) {
             log.warn("Error unspent processing: {}", result.getMessage());
             return;
@@ -106,9 +127,5 @@ public class Processor {
             log.warn("Error mining processing: {}", result.getMessage());
             return;
         }
-    }
-
-    private boolean validate(Block block) {
-        return true;
     }
 }

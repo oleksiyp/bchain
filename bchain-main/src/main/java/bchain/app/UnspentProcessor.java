@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public class UnspentProcessor {
     BranchSwitcher branchSwitcher;
 
     @LogExecutionTime
-    public Result process(Block newBlock, Predicate<Block> validator) {
+    public Result process(Block newBlock, Function<Block, Result> validator) {
         Hash head = refsDao.getHead();
         if (head == null || newBlock.isGenesis()) {
             return genesis(head, newBlock, validator);
@@ -55,8 +56,9 @@ public class UnspentProcessor {
 
                 pushedBlock -> {
                     if (pushedBlock.getHash().equals(newBlock.getHash())) {
-                        if (!validator.test(newBlock)) {
-                            return validationFailed();
+                        Result res = validator.apply(newBlock);
+                        if (!res.isOk()) {
+                            return res;
                         }
                     }
                     pushPop(pushedBlock, true);
@@ -65,10 +67,11 @@ public class UnspentProcessor {
                 });
     }
 
-    private Result genesis(Hash head, Block newBlock, Predicate<Block> validator) {
+    private Result genesis(Hash head, Block newBlock, Function<Block, Result> validator) {
         if (head == null && newBlock.isGenesis()) {
-            if (!validator.test(newBlock)) {
-                return validationFailed();
+            Result res = validator.apply(newBlock);
+            if (!res.isOk()) {
+                return res;
             }
             pushPop(newBlock, true);
             refsDao.setHead(newBlock.getHash());

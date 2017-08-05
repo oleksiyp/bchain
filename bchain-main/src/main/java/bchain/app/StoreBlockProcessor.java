@@ -16,15 +16,9 @@ public class StoreBlockProcessor {
 
     @LogExecutionTime
     public Result store(Block block) {
-        if (!block.verify()) {
-            return verificationFailed();
-        }
-
-        if (blockDao.hasBlock(block.getHash())) {
+        if (!blockDao.saveBlock(block)) {
             return duplicated();
         }
-
-        blockDao.saveBlock(block);
 
         return ok();
     }
