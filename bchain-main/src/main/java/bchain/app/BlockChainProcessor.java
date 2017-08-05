@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-public class Processor {
+public class BlockChainProcessor {
     @Autowired
     VerificationProcessor verificationProcessor;
 
@@ -64,30 +64,31 @@ public class Processor {
 
     @Transactional
     @LogExecutionTime
-    public void process(Block inBlock) {
+    public Result process(Block inBlock) {
         Result result;
         result = verificationProcessor.verify(inBlock);
         if (!result.isOk()) {
             log.warn("Error storing: {}", result.getMessage());
-            return;
+            return result;
         }
 
         result = storeBlockProcessor.store(inBlock);
         if (!result.isOk()) {
             log.warn("Error storing: {}", result.getMessage());
-            return;
+            return result;
         }
 
         result = orphanedProcessor.process(inBlock);
         if (!result.isOk()) {
             log.warn("Error linking: {}", result.getMessage());
-            return;
+            return result;
         }
 
         orphanedProcessor.deOrphan(null,
                 inBlock,
                 this::processFurther,
                 this::processFurther);
+        return Result.ok();
     }
 
     public void processFurther(Tx tx) {
@@ -125,7 +126,6 @@ public class Processor {
         result = miningProcessor.updateMiningTarget();
         if (!result.isOk()) {
             log.warn("Error mining processing: {}", result.getMessage());
-            return;
         }
     }
 }

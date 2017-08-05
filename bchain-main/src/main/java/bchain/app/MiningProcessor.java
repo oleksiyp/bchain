@@ -29,9 +29,6 @@ import static java.lang.Thread.interrupted;
 @Slf4j
 public class MiningProcessor implements Runnable {
     @Autowired
-    TxDao txDao;
-
-    @Autowired
     PendingTxDao pendingTxDao;
 
     @Autowired
@@ -51,8 +48,8 @@ public class MiningProcessor implements Runnable {
     public void run() {
         try {
             long version = 0;
-            Hash baseHash = null;
-            List<Tx> pendingTxs = null;
+            Hash baseHash;
+            List<Tx> pendingTxs;
             while (!interrupted()) {
                 lock.lock();
                 try {

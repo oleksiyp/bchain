@@ -24,6 +24,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import java.util.ArrayList;
 import java.util.List;
 
+import static bchain.dao.sqlite.TestObjects.rndPrivKey;
 import static bchain.domain.TxInput.input;
 import static bchain.domain.TxOutput.output;
 import static bchain.util.RndUtil.rndBytes;
@@ -71,13 +72,13 @@ public class OrphanedProcessorTest {
 
         Tx secondTx = Tx.builder()
                 .setCoinbase(false)
-                .add(input(firstTx.getHash(), 0, rndBytes(32)))
+                .add(input(firstTx.getHash(), 0, rndBytes(32)), rndPrivKey())
                 .add(output(RndUtil.rndPubKey(), 2000))
                 .build();
 
         Tx thirdTx = Tx.builder()
                 .setCoinbase(false)
-                .add(input(secondTx.getHash(), 0, rndBytes(32)))
+                .add(input(secondTx.getHash(), 0, rndBytes(32)), rndPrivKey())
                 .build();
 
         // when
@@ -115,13 +116,13 @@ public class OrphanedProcessorTest {
 
         Tx secondTx = Tx.builder()
                 .setCoinbase(false)
-                .add(input(firstTx.getHash(), 0, rndBytes(32)))
+                .add(input(firstTx.getHash(), 0, rndBytes(32)), rndPrivKey())
                 .add(output(RndUtil.rndPubKey(), 2000))
                 .build();
 
         Tx thirdTx = Tx.builder()
                 .setCoinbase(false)
-                .add(input(secondTx.getHash(), 0, rndBytes(32)))
+                .add(input(secondTx.getHash(), 0, rndBytes(32)), rndPrivKey())
                 .build();
 
         // when

@@ -24,7 +24,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
 public class SqliteTxDao implements TxDao {
-    public static final RowMapper<TxInput> TX_INPUT_ROW_MAPPER = (rs, rowNum) -> TxInput.input(
+    public static final RowMapper<TxInput> TX_INPUT_ROW_MAPPER = (rs, rowNum) ->
+            TxInput.input(
             hash(rs.getBytes("prevTxHash")),
             rs.getInt("outputIndex"),
             rs.getBytes("signature"));

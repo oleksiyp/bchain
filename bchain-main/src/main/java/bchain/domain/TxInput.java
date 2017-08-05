@@ -1,15 +1,14 @@
 package bchain.domain;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.copyOf;
 
-@ToString
 @EqualsAndHashCode
 public class TxInput {
     @Getter
@@ -20,7 +19,7 @@ public class TxInput {
 
     private final byte[] signature;
 
-    public TxInput(Hash prevTxHash,
+    private TxInput(Hash prevTxHash,
                    int outputIndex,
                    byte[] signature) {
         this.prevTxHash = prevTxHash;
@@ -32,11 +31,26 @@ public class TxInput {
         return copyOf(signature, signature.length);
     }
 
+    public static TxInput input(Hash prevTxHash, int outputIndex) {
+        return new TxInput(
+                checkNotNull(prevTxHash),
+                outputIndex,
+                new byte[0]);
+    }
+
     public static TxInput input(Hash prevTxHash, int outputIndex, byte[] signature) {
         return new TxInput(
                 checkNotNull(prevTxHash),
                 outputIndex,
                 checkNotNull(signature));
+    }
+
+    public TxInput sign(PrivKey privKey, boolean coinbase, List<TxOutput> outputs) {
+        byte[] bytes = Crypto.inputDigest(coinbase, prevTxHash, outputIndex, outputs);
+
+        byte[] sign = Crypto.sign(privKey, bytes);
+
+        return new TxInput(prevTxHash, outputIndex, sign);
     }
 
     public void digest(DataOutput out) throws IOException {
@@ -57,5 +71,14 @@ public class TxInput {
         byte []signature = new byte[len];
         dataIn.readFully(signature);
         return new TxInput(prevTxHash, outputIndex, signature);
+    }
+
+    @Override
+    public String toString() {
+        return "TxInput(" +
+                "prevTxHash=" + prevTxHash +
+                ", outputIndex=" + outputIndex +
+                ", signature=" + Hash.hash(signature) +
+                ')';
     }
 }

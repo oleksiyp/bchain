@@ -152,4 +152,8 @@ public class UnspentProcessor {
             log.info("Spent -{} for [{}]", new Object[] { unspentTxOut.getValue(), unspentTxOut.getAddress()});
         }
     }
+
+    public List<UnspentTxOut> unspents(PubKey address) {
+        return unspentDao.unspents(address);
+    }
 }

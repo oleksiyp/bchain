@@ -11,7 +11,9 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static bchain.domain.PubKey.pubKey;
@@ -107,6 +109,29 @@ public class SqliteUnspentDao implements UnspentDao {
         } else {
             return output.get(0);
         }
+    }
+
+    @Override
+    public List<UnspentTxOut> unspents(PubKey address) {
+        Optional<Long> addressIdOpt = txDao.addressIdOpt(address);
+        if (!addressIdOpt.isPresent()) {
+            return new ArrayList<>();
+        }
+        long addressId = addressIdOpt.get();
+
+        return jdbcTemplate.query(
+                "select txOut.txId, txOut.n, txOut.value " +
+                        "from UnspentTxOut unspentTxOut " +
+                        "join TxOutput txOut " +
+                        "on unspentTxOut.txId = txOut.txId " +
+                        "and unspentTxOut.n = txOut.n " +
+                        "where txOut.addressId = ?",
+                (rs, rowNum) -> new UnspentTxOut(
+                        txDao.txHash(rs.getLong("txId")),
+                        rs.getInt("n"),
+                        address,
+                        rs.getLong("value")),
+                addressId);
     }
 
     private void changeUnsent(List<UnspentTxOut> add, long mult) {

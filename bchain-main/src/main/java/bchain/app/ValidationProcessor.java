@@ -67,7 +67,8 @@ public class ValidationProcessor {
                     }
 
                     byte[] inputDigest = inputDigest(tx.isCoinbase(),
-                            input,
+                            input.getPrevTxHash(),
+                            input.getOutputIndex(),
                             tx.getOutputs());
 
                     if (!verifySignature(

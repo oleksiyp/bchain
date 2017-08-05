@@ -53,7 +53,7 @@ public class ProcessorConfig {
     }
 
     @Bean
-    public Processor processor() {
-        return new Processor();
+    public BlockChainProcessor processor() {
+        return new BlockChainProcessor();
     }
 }

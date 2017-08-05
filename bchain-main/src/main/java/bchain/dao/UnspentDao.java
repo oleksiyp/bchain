@@ -13,4 +13,6 @@ public interface UnspentDao {
     void spendUnspend(List<UnspentTxOut> unspentTxOuts, List<UnspentTxOut> removeUnspentTxOuts);
 
     UnspentTxOut get(Hash hash, int outputIndex);
+
+    List<UnspentTxOut> unspents(PubKey address);
 }

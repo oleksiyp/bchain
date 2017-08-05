@@ -1,9 +1,12 @@
 package bchain.domain;
 
+import com.sun.jmx.remote.internal.ArrayQueue;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static bchain.domain.Tx.tx;
 
@@ -12,18 +15,27 @@ public class TxBuilder {
     private boolean coinbase;
 
     private final List<TxInput> inputs;
-
     private final List<TxOutput> outputs;
+    private final List<PrivKey> privKeys;
 
     public TxBuilder() {
         inputs = new ArrayList<>();
         outputs = new ArrayList<>();
+        privKeys = new ArrayList<>();
     }
 
     public Tx build() {
-        Hash hash = Crypto.computeHash(coinbase, inputs, outputs);
+        List<TxInput> signedInputs = new ArrayList<>();
+        for (int i = 0; i < inputs.size(); i++) {
+            TxInput input = inputs.get(i);
+            PrivKey privKey = privKeys.get(i);
+            TxInput signedInput = input.sign(privKey, coinbase, outputs);
+            signedInputs.add(signedInput);
+        }
 
-        return tx(hash, coinbase, inputs, outputs);
+        Hash hash = Crypto.computeHash(coinbase, signedInputs, outputs);
+
+        return tx(hash, coinbase, signedInputs, outputs);
     }
 
     public TxBuilder setCoinbase(boolean coinbase) {
@@ -31,8 +43,9 @@ public class TxBuilder {
         return this;
     }
 
-    public TxBuilder add(TxInput input) {
+    public TxBuilder add(TxInput input, PrivKey privKey) {
         inputs.add(input);
+        privKeys.add(privKey);
         return this;
     }
 
