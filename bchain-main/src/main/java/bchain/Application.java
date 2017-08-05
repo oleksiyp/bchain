@@ -45,6 +45,74 @@ public class Application {
         long value;
     }
 
+    private void run() {
+        Account op = new Account();
+        List<Account> miners = createN(5, Account::new);
+        List<Account> services = createN(10, Account::new);
+
+        List<Account> all = new ArrayList<>();
+        all.add(op);
+        all.addAll(miners);
+        all.addAll(services);
+
+        Tx niceDeposit = Tx.builder()
+                .setCoinbase(true)
+                .add(output(op.getKeyPair().getPubKey(), 2500))
+                .build();
+
+        Block genesisBlock = Block.builder()
+                .add(niceDeposit)
+                .build();
+
+        blockChainProcessor.process(genesisBlock);
+
+        for (Account account : all) {
+            account.retrieveCoins();
+            log.info("Coins {} {}", account.keyPair.getPubKey(), account.amount());
+        }
+
+        Random rnd = new Random();
+
+        while (true) {
+            Block block;
+            while ((block = blockQ.blocks.poll()) != null) {
+                log.info("{} {}", block.getHash(), block.getPrevBlockHash());
+                for (Tx tx : block.getTxs()) {
+                    log.info("{}", tx);
+                }
+                blockChainProcessor.process(block);
+            }
+
+            List<Account> hasCoins = all.stream()
+                    .filter(Account::hasCoins)
+                    .collect(Collectors.toList());
+
+            Account from = hasCoins.get(rnd.nextInt(hasCoins.size()));
+            int amount = from.amount() == 1 ? 1 : rnd.nextInt((int) from.amount() - 1) + 1;
+            Account to = all.get(rnd.nextInt(all.size()));
+            Tx tx = from.transfer(amount, to);
+
+            log.info("New tx {}", tx.getHash());
+            blockChainProcessor.process(tx);
+        }
+    }
+
+    private <T> List<T> createN(int n, Supplier<T> constructor) {
+        List<T> list = new ArrayList<>();
+        while (n-- > 0) {
+            list.add(constructor.get());
+        }
+        return list;
+    }
+
+    public static void main(String[] args) {
+        ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
+
+        ctx.getBean(Application.class)
+                .run();
+    }
+
+
     static int nActor = 0;
 
     static File keysFile = new File("keys.dat");
@@ -77,7 +145,7 @@ public class Application {
     }
 
     @Getter
-    class Actor {
+    class Account {
         private RsaKeyPair keyPair = read ?
                 readKeyPair() :
                 writeKeyPair(Crypto.rsaGen());
@@ -94,7 +162,7 @@ public class Application {
                     .sum();
         }
 
-        public Tx transfer(long amount, Actor to) {
+        public Tx transfer(long amount, Account to) {
             TxBuilder builder = Tx.builder()
                     .add(output(to.keyPair.getPubKey(), amount));
 
@@ -134,71 +202,4 @@ public class Application {
         }
     }
 
-    private void run() {
-        Actor op = new Actor();
-        List<Actor> miners = createN(5, Actor::new);
-        List<Actor> services = createN(10, Actor::new);
-
-        List<Actor> all = new ArrayList<>();
-        all.add(op);
-        all.addAll(miners);
-        all.addAll(services);
-
-        Tx base = Tx.builder()
-                .setCoinbase(true)
-                .add(output(op.getKeyPair().getPubKey(), 2500))
-                .build();
-
-        Block genesisBlock = Block.builder()
-                .add(base)
-                .build();
-
-        blockChainProcessor.process(genesisBlock);
-
-
-        for (Actor actor : all) {
-            actor.retrieveCoins();
-            log.info("Coins {} {}", actor.keyPair.getPubKey(), actor.amount());
-        }
-
-        Random rnd = new Random();
-
-        while (true) {
-            Block block;
-            while ((block = blockQ.blocks.poll()) != null) {
-                log.info("{} {}", block.getHash(), block.getPrevBlockHash());
-                for (Tx tx : block.getTxs()) {
-                    log.info("{}", tx);
-                }
-                blockChainProcessor.process(block);
-            }
-
-            List<Actor> hasCoins = all.stream()
-                    .filter(Actor::hasCoins)
-                    .collect(Collectors.toList());
-
-            Actor from = hasCoins.get(rnd.nextInt(hasCoins.size()));
-            int amount = from.amount() == 1 ? 1 : rnd.nextInt((int) from.amount() - 1) + 1;
-            Actor to = all.get(rnd.nextInt(all.size()));
-            Tx tx = from.transfer(amount, to);
-
-            log.info("New tx {}", tx.getHash());
-            blockChainProcessor.process(tx);
-        }
-    }
-
-    private <T> List<T> createN(int n, Supplier<T> constructor) {
-        List<T> list = new ArrayList<>();
-        while (n-- > 0) {
-            list.add(constructor.get());
-        }
-        return list;
-    }
-
-    public static void main(String[] args) {
-        ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
-
-        ctx.getBean(Application.class)
-                .run();
-    }
 }
