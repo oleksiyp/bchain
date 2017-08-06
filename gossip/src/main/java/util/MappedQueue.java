@@ -1,7 +1,6 @@
 package util;
 
-import io.netty.util.collection.LongObjectHashMap;
-
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -28,7 +27,7 @@ public class MappedQueue<T> implements Iterable<T> {
         queue = new Object[maxSize];
         ids = new long[maxSize];
         timestamps = new long[maxSize];
-        map = new LongObjectHashMap<>(maxSize);
+        map = new HashMap<>(maxSize);
         this.wiper = wiper;
         setAll(queue, i -> factory.get());
     }

@@ -1,9 +1,9 @@
 package gossip.registry;
 
-import io.netty.util.collection.IntObjectHashMap;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -20,8 +20,8 @@ public class Registry<F> {
     private F constructorParam;
 
     public Registry() {
-        choiceTypes = new IntObjectHashMap<>();
-        constructors = new IntObjectHashMap<>();
+        choiceTypes = new HashMap<>();
+        constructors = new HashMap<>();
     }
 
     public <M> Registry<F> register(

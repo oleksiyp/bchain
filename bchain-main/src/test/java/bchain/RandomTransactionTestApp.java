@@ -1,8 +1,9 @@
 package bchain;
 
-import bchain.app.BlockChainProcessor;
-import bchain.app.ProcessorConfig;
-import bchain.app.UnspentProcessor;
+import bchain.processing.BlockAcceptor;
+import bchain.processing.BlockChainProcessor;
+import bchain.processing.ProcessorConfig;
+import bchain.processing.UnspentProcessor;
 import bchain.dao.sqlite.SqliteConfig;
 import bchain.domain.*;
 import bchain.util.ExtendedJdbcTemplateConfig;
@@ -11,21 +12,15 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -34,7 +29,7 @@ import static bchain.domain.TxOutput.output;
 
 @Import({SqliteConfig.class,
         ProcessorConfig.class,
-        BlockQConfig.class,
+        RandomTransactionTestApp.BlockQConfig.class,
         ExtendedJdbcTemplateConfig.class,
         FlywayAutoConfiguration.class})
 @Slf4j
@@ -215,4 +210,29 @@ public class RandomTransactionTestApp {
         }
     }
 
+    public static class BlockQ implements BlockAcceptor {
+        Queue<Block> blocks;
+
+        public BlockQ() {
+            blocks = new ConcurrentLinkedQueue<>();
+        }
+
+        @Override
+        public boolean accept(Block block) {
+            if (!block.getHash().toString().startsWith("0")) {
+                return false;
+            }
+
+            blocks.add(block);
+            return true;
+        }
+    }
+
+    @Configuration
+    public static class BlockQConfig {
+        @Bean
+        public BlockQ blockQ() {
+            return new BlockQ();
+        }
+    }
 }

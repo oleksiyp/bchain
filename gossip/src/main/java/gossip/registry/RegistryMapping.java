@@ -2,7 +2,6 @@ package gossip.registry;
 
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import io.netty.util.collection.IntObjectHashMap;
 import gossip.Clearable;
 import gossip.TypeAware;
 
@@ -31,7 +30,7 @@ public class RegistryMapping<T extends RegistryItem<C>, C> {
         this.constructors = new ArrayList<>();
 
         this.choiceTypeList = new ArrayList<>();
-        this.choiceTypeMap = new IntObjectHashMap<>(choiceTypeMap.size());
+        this.choiceTypeMap = new HashMap<>(choiceTypeMap.size());
         reverseChoiceTypeMap = new IdentityHashMap<>();
 
         int i = 0;

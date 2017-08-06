@@ -1,15 +1,9 @@
 package gossip;
 
-import io.netty.util.collection.LongObjectHashMap;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static java.lang.Math.abs;
-import static java.util.Arrays.setAll;
 
 public class LedgerImpl<T> implements Iterable<T> {
     private final long[] ids;
@@ -28,7 +22,7 @@ public class LedgerImpl<T> implements Iterable<T> {
         queue = new ArrayList<>(maxSize);
         ids = new long[maxSize];
         timestamps = new long[maxSize];
-        map = new LongObjectHashMap<>(maxSize);
+        map = new HashMap<>(maxSize);
         this.wiper = wiper;
         for (int i = 0; i < maxSize; i++) {
             queue.add(null);
