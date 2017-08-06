@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.BlockDao;
 import bchain.dao.OrphanedBlockDao;
 import bchain.dao.OrphanedTxDao;
@@ -18,8 +18,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static bchain.app.result.Result.ok;
-import static bchain.app.result.Result.orphaned;
+import static bchain.domain.Result.ok;
+import static bchain.domain.Result.orphaned;
 
 public class OrphanedProcessor {
     @Autowired

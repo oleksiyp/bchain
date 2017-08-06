@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.OrphanedBlockDao;
 import bchain.dao.OrphanedTxDao;
 import bchain.dao.TxDao;

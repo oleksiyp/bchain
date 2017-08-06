@@ -1,16 +1,25 @@
 package bchain;
 
 import bchain.app.BlockChainProcessor;
+import bchain.app.ProcessorConfig;
 import bchain.app.UnspentProcessor;
+import bchain.dao.sqlite.SqliteConfig;
 import bchain.domain.*;
+import bchain.util.ExtendedJdbcTemplateConfig;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -23,10 +32,13 @@ import java.util.stream.Collectors;
 import static bchain.domain.TxInput.input;
 import static bchain.domain.TxOutput.output;
 
-@EnableAutoConfiguration
-@ComponentScan
+@Import({SqliteConfig.class,
+        ProcessorConfig.class,
+        BlockQConfig.class,
+        ExtendedJdbcTemplateConfig.class,
+        FlywayAutoConfiguration.class})
 @Slf4j
-public class Application {
+public class RandomTransactionTestApp {
 
     @Autowired
     BlockChainProcessor blockChainProcessor;
@@ -106,9 +118,9 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
+        ConfigurableApplicationContext ctx = SpringApplication.run(RandomTransactionTestApp.class, args);
 
-        ctx.getBean(Application.class)
+        ctx.getBean(RandomTransactionTestApp.class)
                 .run();
     }
 
@@ -118,6 +130,7 @@ public class Application {
     static File keysFile = new File("keys.dat");
     static boolean read = keysFile.exists();
     static DataInput in;
+
     static {
         try {
             in = read ? new DataInputStream(new FileInputStream(keysFile)) : null;

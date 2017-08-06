@@ -1,17 +1,13 @@
 package bchain.app;
 
-import bchain.app.result.Result;
-import bchain.dao.BlockLevelDao;
+import bchain.domain.Result;
 import bchain.dao.PendingTxDao;
 import bchain.dao.RefsDao;
-import bchain.dao.TxDao;
 import bchain.domain.Block;
 import bchain.domain.BlockBuilder;
 import bchain.domain.Hash;
 import bchain.domain.Tx;
 import bchain.util.LogExecutionTime;
-import com.google.common.collect.ImmutableList;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -20,8 +16,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static bchain.app.result.Result.nextNounce;
-import static bchain.app.result.Result.ok;
+import static bchain.domain.Result.nextNounce;
+import static bchain.domain.Result.ok;
 import static bchain.util.RndUtil.rndBytes;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static java.lang.Thread.interrupted;

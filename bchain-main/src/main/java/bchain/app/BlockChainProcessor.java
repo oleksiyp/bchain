@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.domain.Block;
 import bchain.domain.Tx;
 import bchain.util.LogExecutionTime;

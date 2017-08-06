@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.BlockDao;
 import bchain.dao.BlockLevelDao;
 import bchain.domain.Block;
@@ -8,15 +8,14 @@ import bchain.domain.Hash;
 import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import static bchain.app.result.Result.consistencyProblem;
-import static bchain.app.result.Result.ok;
+import static bchain.domain.Result.consistencyProblem;
+import static bchain.domain.Result.ok;
 
 @Slf4j
 public class BranchSwitcher {

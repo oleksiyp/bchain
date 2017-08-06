@@ -1,14 +1,13 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.BlockDao;
 import bchain.domain.Block;
 import bchain.util.LogExecutionTime;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static bchain.app.result.Result.duplicated;
-import static bchain.app.result.Result.ok;
-import static bchain.app.result.Result.verificationFailed;
+import static bchain.domain.Result.duplicated;
+import static bchain.domain.Result.ok;
 
 public class StoreBlockProcessor {
     @Autowired

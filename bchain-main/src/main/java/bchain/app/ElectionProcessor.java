@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.BlockLevelDao;
 import bchain.dao.RefsDao;
 import bchain.dao.PendingTxDao;
@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static bchain.app.result.Result.ok;
+import static bchain.domain.Result.ok;
 import static java.util.Collections.singletonList;
 
 @Slf4j

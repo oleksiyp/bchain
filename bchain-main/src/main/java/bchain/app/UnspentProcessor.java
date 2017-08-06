@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.BlockLevelDao;
 import bchain.dao.RefsDao;
 import bchain.dao.TxDao;
@@ -10,14 +10,12 @@ import bchain.util.GraphUtil;
 import bchain.util.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StopWatch;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static bchain.app.result.Result.*;
+import static bchain.domain.Result.*;
 import static java.util.function.Function.identity;
 
 @Slf4j

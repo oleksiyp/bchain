@@ -1,6 +1,6 @@
 package bchain.app;
 
-import bchain.app.result.Result;
+import bchain.domain.Result;
 import bchain.dao.UnspentDao;
 import bchain.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static bchain.app.result.Result.ok;
-import static bchain.app.result.Result.validationFailed;
+import static bchain.domain.Result.ok;
+import static bchain.domain.Result.validationFailed;
 import static bchain.domain.Crypto.inputDigest;
 import static bchain.domain.Crypto.verifySignature;
 

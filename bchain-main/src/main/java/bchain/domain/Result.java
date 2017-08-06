@@ -1,4 +1,4 @@
-package bchain.app.result;
+package bchain.domain;
 
 import lombok.Getter;
 import lombok.ToString;

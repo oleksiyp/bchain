@@ -23,7 +23,7 @@ public class LogExcutionTimeAspect {
 
         double t = stopWatch.getTotalTimeMillis() / 1000.0;
 
-        if (t > 1.) {
+        if (t > 0.01) {
             StringBuilder msg = new StringBuilder();
 
             msg.append(String.format("%8.3f s ", t));
