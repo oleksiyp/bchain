@@ -125,7 +125,15 @@ public class SqliteUnspentDao implements UnspentDao {
                         "join TxOutput txOut " +
                         "on unspentTxOut.txId = txOut.txId " +
                         "and unspentTxOut.n = txOut.n " +
-                        "where txOut.addressId = ?",
+                        "where txOut.addressId = ? " +
+                        "and not exists (" +
+                        "select pendTx.txId " +
+                        "from PendingTx pendTx " +
+                        "join TxInput txIn " +
+                        "on pendTx.txId = txIn.txId " +
+                        "where txIn.prevTxHash = (select hash from Tx where txId = txOut.txId) " +
+                        "and txIn.outputIndex = txOut.n" +
+                        ")",
                 (rs, rowNum) -> new UnspentTxOut(
                         txDao.txHash(rs.getLong("txId")),
                         rs.getInt("n"),
