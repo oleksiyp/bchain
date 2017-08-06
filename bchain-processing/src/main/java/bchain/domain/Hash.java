@@ -23,11 +23,6 @@ public class Hash {
         return new Hash(hashValue);
     }
 
-    public void digest(DataOutputStream out) throws IOException {
-        out.writeInt(hashValue.length);
-        out.write(hashValue);
-    }
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(hashValue.length * 2);
@@ -44,14 +39,6 @@ public class Hash {
 
     public static Hash hashOf(byte[] bytes) {
         return hash(Crypto.hash(bytes));
-    }
-
-    public static void digest(Hash hash, DataOutputStream dataOut) throws IOException {
-        if (hash != null) {
-            hash.digest(dataOut);
-        } else {
-            dataOut.write(0);
-        }
     }
 
     public void serialize(DataOutput dataOut) throws IOException {

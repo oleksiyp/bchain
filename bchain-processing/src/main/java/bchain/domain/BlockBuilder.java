@@ -27,7 +27,7 @@ public class BlockBuilder {
     }
 
     public Block build() {
-        Hash hash = BlockHash.computeBlockHash(prevBlockHash, txs);
+        Hash hash = Crypto.computeBlockHash(prevBlockHash, txs);
         return Block.block(hash, prevBlockHash, txs);
     }
 }

@@ -1,6 +1,5 @@
 package bchain.domain;
 
-import com.google.common.base.Preconditions;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -9,7 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static bchain.domain.Crypto.computeHash;
+import static bchain.domain.Crypto.computeTxHash;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.google.common.collect.ImmutableList.of;
@@ -56,8 +55,7 @@ public class Tx {
     }
 
     public void digest(DataOutputStream dataOut) throws IOException {
-        computeHash(coinbase, inputs, outputs)
-                .digest(dataOut);
+        computeTxHash(coinbase, inputs, outputs).serialize(dataOut);
     }
 
     public void serialize(DataOutput dataOut) throws IOException {

@@ -53,10 +53,6 @@ public class TxInput {
         return new TxInput(prevTxHash, outputIndex, sign);
     }
 
-    public void digest(DataOutput out) throws IOException {
-        serialize(out);
-    }
-
     public void serialize(DataOutput dataOut) throws IOException {
         prevTxHash.serialize(dataOut);
         dataOut.writeInt(outputIndex);

@@ -5,8 +5,8 @@ import bchain.domain.*;
 
 import static bchain.domain.Result.ok;
 import static bchain.domain.Result.verificationFailed;
-import static bchain.domain.BlockHash.computeBlockHash;
-import static bchain.domain.Crypto.computeHash;
+import static bchain.domain.Crypto.computeBlockHash;
+import static bchain.domain.Crypto.computeTxHash;
 
 public class VerificationProcessor {
     public Result verify(Tx tx) {
@@ -14,7 +14,7 @@ public class VerificationProcessor {
     }
 
     private Result verify(Tx tx, boolean allowCoinbase) {
-        Hash computedHash = computeHash(tx.isCoinbase(), tx.getInputs(), tx.getOutputs());
+        Hash computedHash = computeTxHash(tx.isCoinbase(), tx.getInputs(), tx.getOutputs());
 
         if (!computedHash.equals(tx.getHash())) {
             return verificationFailed("tx hash");

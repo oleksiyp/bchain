@@ -2,7 +2,6 @@ package bchain.domain;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
@@ -22,20 +21,20 @@ public class Crypto {
         }
     }
 
-    public static Hash computeHash(boolean coinbase,
-                                   List<TxInput> inputs,
-                                   List<TxOutput> outputs) {
+    public static Hash computeTxHash(boolean coinbase,
+                                     List<TxInput> inputs,
+                                     List<TxOutput> outputs) {
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              DataOutputStream dataOut = new DataOutputStream(byteOut)) {
 
             dataOut.writeBoolean(coinbase);
 
             for (TxInput input : inputs) {
-                input.digest(dataOut);
+                input.serialize(dataOut);
             }
 
             for (TxOutput output : outputs) {
-                output.digest(dataOut);
+                output.serialize(dataOut);
             }
 
             return Hash.hashOf(byteOut.toByteArray());
@@ -54,13 +53,35 @@ public class Crypto {
             dataOut.writeInt(outputIndex);
 
             for (TxOutput output : outputs) {
-                output.digest(dataOut);
+                output.serialize(dataOut);
             }
 
             return byteOut.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Hash computeBlockHash(Hash prevBlockHash, List<Tx> txs) {
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+             DataOutputStream dataOut = new DataOutputStream(byteOut)) {
+
+            if (prevBlockHash != null) {
+                dataOut.writeBoolean(true);
+                prevBlockHash.serialize(dataOut);
+            } else {
+                dataOut.writeBoolean(false);
+            }
+
+            for (Tx tx : txs) {
+                tx.digest(dataOut);
+            }
+
+            return Hash.hashOf(byteOut.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static boolean verifySignature(PubKey address, byte[] bytes, byte[] signature) {

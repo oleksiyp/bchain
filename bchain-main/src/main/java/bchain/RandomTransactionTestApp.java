@@ -7,6 +7,7 @@ import bchain.processing.UnspentProcessor;
 import bchain.dao.sqlite.SqliteConfig;
 import bchain.domain.*;
 import bchain.util.ExtendedJdbcTemplateConfig;
+import bchain.util.LogExecutionTimeAspectConfig;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
 import java.io.*;
@@ -31,8 +33,10 @@ import static bchain.domain.TxOutput.output;
         ProcessorConfig.class,
         RandomTransactionTestApp.BlockQConfig.class,
         ExtendedJdbcTemplateConfig.class,
-        FlywayAutoConfiguration.class})
+        FlywayAutoConfiguration.class,
+        LogExecutionTimeAspectConfig.class})
 @Slf4j
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class RandomTransactionTestApp {
 
     @Autowired

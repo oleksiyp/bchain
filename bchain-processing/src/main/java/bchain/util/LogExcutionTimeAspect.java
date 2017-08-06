@@ -4,14 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-@Component
 @Aspect
 @Slf4j
 public class LogExcutionTimeAspect {
-    @Around("@annotation(bchain.util.LogExecutionTime) || execution(* org.springframework.jdbc.core.JdbcTemplate.*(..))")
+    @Around("@annotation(bchain.util.LogExecutionTime)")
     public Object logTimeMethod(ProceedingJoinPoint joinPoint) throws Throwable {
 
         StopWatch stopWatch = new StopWatch();
@@ -23,7 +21,7 @@ public class LogExcutionTimeAspect {
 
         double t = stopWatch.getTotalTimeMillis() / 1000.0;
 
-        if (t > 0.01) {
+        if (t > 0.1) {
             StringBuilder msg = new StringBuilder();
 
             msg.append(String.format("%8.3f s ", t));

@@ -35,7 +35,6 @@ public class BlockChainProcessor {
     MiningProcessor miningProcessor;
 
     @Transactional
-    @LogExecutionTime
     public void process(Tx inTx) {
         Result result;
         result = verificationProcessor.verify(inTx);
@@ -63,7 +62,6 @@ public class BlockChainProcessor {
     }
 
     @Transactional
-    @LogExecutionTime
     public Result process(Block inBlock) {
         Result result;
         result = verificationProcessor.verify(inBlock);

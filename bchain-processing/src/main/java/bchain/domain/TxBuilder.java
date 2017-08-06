@@ -1,12 +1,9 @@
 package bchain.domain;
 
-import com.sun.jmx.remote.internal.ArrayQueue;
 import lombok.Getter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static bchain.domain.Tx.tx;
 
@@ -33,7 +30,7 @@ public class TxBuilder {
             signedInputs.add(signedInput);
         }
 
-        Hash hash = Crypto.computeHash(coinbase, signedInputs, outputs);
+        Hash hash = Crypto.computeTxHash(coinbase, signedInputs, outputs);
 
         return tx(hash, coinbase, signedInputs, outputs);
     }

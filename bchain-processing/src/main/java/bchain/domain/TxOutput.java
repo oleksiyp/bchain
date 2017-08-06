@@ -28,10 +28,6 @@ public class TxOutput {
                 value);
     }
 
-    public void digest(DataOutput dataOut) throws IOException {
-        serialize(dataOut);
-    }
-
     public void serialize(DataOutput dataOut) throws IOException {
         address.serialize(dataOut);
         dataOut.writeLong(value);

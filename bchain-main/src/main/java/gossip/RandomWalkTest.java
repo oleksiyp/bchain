@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Test {
+public class RandomWalkTest {
     public static final int PORT_START = 2000;
 
     Random rnd = new Random();
@@ -105,7 +105,7 @@ public class Test {
     public static void main(String[] args) throws IOException {
         long start = System.nanoTime();
 
-        new Test().run();
+        new RandomWalkTest().run();
 
         long end = System.nanoTime();
         System.out.printf("%.3f seconds%n", (end - start) / 1e9);
