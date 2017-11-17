@@ -10,14 +10,23 @@ public class BlockBuilder {
     private Hash prevBlockHash;
 
     @Getter
+    private byte []nounce;
+
+    @Getter
     private List<Tx> txs;
 
     public BlockBuilder() {
+        nounce = new byte[16];
         txs = new ArrayList<>();
     }
 
     public BlockBuilder setPrevBlockHash(Hash prevBlockHash) {
         this.prevBlockHash = prevBlockHash;
+        return this;
+    }
+
+    public BlockBuilder setNounce(byte[] nounce) {
+        this.nounce = nounce;
         return this;
     }
 
@@ -27,7 +36,7 @@ public class BlockBuilder {
     }
 
     public Block build() {
-        Hash hash = Crypto.computeBlockHash(prevBlockHash, txs);
-        return Block.block(hash, prevBlockHash, txs);
+        Hash hash = Crypto.computeBlockHash(prevBlockHash, nounce, txs);
+        return Block.block(hash, prevBlockHash, nounce, txs);
     }
 }

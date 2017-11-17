@@ -9,6 +9,7 @@ import gossip.registry.RegistryMapping;
 import java.io.IOException;
 import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.List;
 
 import static java.nio.channels.SelectionKey.*;
 
@@ -29,9 +30,16 @@ public class SocketShared {
     }
 
 
-    public void loopSelector() throws IOException {
+    public void loopSelector(List<IdleHandler> idles) throws IOException {
         while (!done) {
-            if (selector.selectNow() == 0) continue;
+            if (selector.selectNow() == 0) {
+                if (idles.stream().anyMatch(IdleHandler::run)) {
+                    continue;
+                }
+                if (selector.select() == 0) {
+                    continue;
+                }
+            }
 
             Iterator<SelectionKey> keyIt = selector.selectedKeys().iterator();
 

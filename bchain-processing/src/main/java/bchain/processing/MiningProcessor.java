@@ -46,10 +46,11 @@ public class MiningProcessor implements Runnable {
             long version = 0;
             Hash baseHash;
             List<Tx> pendingTxs;
+            Result lastMiningResult = ok();
             while (!interrupted()) {
                 lock.lock();
                 try {
-                    while (!(recentVersion > version
+                    while (!((!lastMiningResult.isOk() || recentVersion > version)
                             && recentPendingTxs != null
                             && !recentPendingTxs.isEmpty())) {
                         hasNewerData.await();
@@ -62,12 +63,7 @@ public class MiningProcessor implements Runnable {
                     lock.unlock();
                 }
 
-                log.info("Mining {} txs based on {}", pendingTxs.size(), baseHash);
-                Result miningResult = mine(baseHash,
-                        pendingTxs,
-                        rndBytes(16));
-
-                miningResult.isOk();
+                lastMiningResult = mine(baseHash, pendingTxs);
             }
         } catch (InterruptedException ex) {
 
@@ -75,9 +71,9 @@ public class MiningProcessor implements Runnable {
     }
 
     @LogExecutionTime
-    private Result mine(Hash baseHash, List<Tx> pendingTxs, byte[] nounce) {
+    private Result mine(Hash baseHash, List<Tx> pendingTxs) {
         BlockBuilder builder = Block.builder();
-//        builder.setNounce(nounce);
+        builder.setNounce(rndBytes(16));
         builder.setPrevBlockHash(baseHash);
         for (Tx tx : pendingTxs) {
             builder.add(tx);
@@ -88,6 +84,9 @@ public class MiningProcessor implements Runnable {
         if (!blockAcceptor.accept(newBlock)) {
             return nextNounce();
         }
+
+        log.info("Mined {} {} txs based on {}", newBlock.getHash(), pendingTxs.size(), baseHash);
+
         return ok();
     }
 

@@ -3,10 +3,13 @@ package gossip;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import gossip.in_out.*;
 import gossip.message.AbstractMessage;
 import gossip.message.MessageType;
 import gossip.registry.RegistryItem;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 @ToString
 @Getter
@@ -24,15 +27,15 @@ public class PingMessage extends AbstractMessage {
     }
 
     @Override
-    public void deserialize(In<?> in) {
+    public void deserialize(DataInput in) throws IOException {
         super.deserialize(in);
-        port = in.getInt();
+        port = in.readInt();
     }
 
     @Override
-    public void serialize(Out<?> out) {
+    public void serialize(DataOutput out) throws IOException {
         super.serialize(out);
-        out.putInt(port);
+        out.writeInt(port);
     }
 
     @Override

@@ -62,16 +62,13 @@ public class Crypto {
         }
     }
 
-    public static Hash computeBlockHash(Hash prevBlockHash, List<Tx> txs) {
+    public static Hash computeBlockHash(Hash prevBlockHash, byte[] nounce, List<Tx> txs) {
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              DataOutputStream dataOut = new DataOutputStream(byteOut)) {
 
-            if (prevBlockHash != null) {
-                dataOut.writeBoolean(true);
-                prevBlockHash.serialize(dataOut);
-            } else {
-                dataOut.writeBoolean(false);
-            }
+            Hash.serializeNullable(prevBlockHash, dataOut);
+
+            dataOut.write(nounce);
 
             for (Tx tx : txs) {
                 tx.digest(dataOut);

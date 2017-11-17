@@ -41,7 +41,7 @@ public class VerificationProcessor {
     }
 
     public Result verify(Block block) {
-        Hash computedHash = computeBlockHash(block.getPrevBlockHash(), block.getTxs());
+        Hash computedHash = computeBlockHash(block.getPrevBlockHash(), block.getNounce(), block.getTxs());
 
         if (!computedHash.equals(block.getHash())) {
             return verificationFailed("block hash");

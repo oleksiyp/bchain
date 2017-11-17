@@ -40,6 +40,7 @@ create table Block (
     blockId integer primary key not null,
     hash blob(32) not null,
     prevBlockHash blob(32),
+    nounce blob(16) not null,
     nTxs integer not null
 );
 

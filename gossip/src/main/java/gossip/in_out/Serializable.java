@@ -2,10 +2,14 @@ package gossip.in_out;
 
 import gossip.registry.RegistryItem;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public interface Serializable {
     RegistryItem<?> getType();
 
-    void deserialize(In<?> in);
+    void deserialize(DataInput in) throws IOException;
 
-    void serialize(Out<?> out);
+    void serialize(DataOutput out) throws IOException;
 }

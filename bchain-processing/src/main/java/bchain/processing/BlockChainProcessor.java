@@ -4,11 +4,15 @@ import bchain.domain.Result;
 import bchain.domain.Block;
 import bchain.domain.Tx;
 import bchain.util.LogExecutionTime;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
+@Getter
+@Setter
 public class BlockChainProcessor {
     @Autowired
     VerificationProcessor verificationProcessor;

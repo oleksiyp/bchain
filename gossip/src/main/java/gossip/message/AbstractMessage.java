@@ -1,9 +1,10 @@
 package gossip.message;
 
 import lombok.Getter;
-import gossip.in_out.In;
-import gossip.in_out.Out;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Random;
 
 public abstract class AbstractMessage implements Message {
@@ -17,13 +18,13 @@ public abstract class AbstractMessage implements Message {
     }
 
     @Override
-    public void serialize(Out<?> out) {
-        out.putLong(id);
+    public void serialize(DataOutput out) throws IOException {
+        out.writeLong(id);
     }
 
     @Override
-    public void deserialize(In<?> in) {
-        id = in.getLong();
+    public void deserialize(DataInput in) throws IOException {
+        id = in.readLong();
     }
 
     @Override

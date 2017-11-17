@@ -46,6 +46,15 @@ public class Hash {
         dataOut.write(hashValue);
     }
 
+    public static void serializeNullable(Hash hash, DataOutput dataOut) throws IOException {
+        if (hash != null) {
+            dataOut.writeBoolean(true);
+            hash.serialize(dataOut);
+        } else {
+            dataOut.writeBoolean(false);
+        }
+    }
+
     public static Hash deserialize(DataInput dataIn) throws IOException {
         int len = dataIn.readInt();
         byte []hash = new byte[len];

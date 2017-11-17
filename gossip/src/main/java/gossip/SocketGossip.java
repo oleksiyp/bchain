@@ -4,6 +4,7 @@ import lombok.Getter;
 import gossip.message.Message;
 import gossip.message.MessageType;
 import gossip.registry.RegistryMapping;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -29,12 +30,14 @@ public class SocketGossip {
     private final SocketShared shared;
     private final Supplier<Integer> portGen;
     private final RegistryMapping<MessageType<Message>, Message> typeMapping;
-    private final BiConsumer<SocketParty, Message> handler;
 
-    public SocketGossip(SocketShared shared, Supplier<Integer> portGen, BiConsumer<SocketParty, Message> handler) throws IOException {
+    @Getter
+    @Setter
+    private MessageHandler handler;
+
+    public SocketGossip(SocketShared shared, Supplier<Integer> portGen) throws IOException {
         this.shared = shared;
         this.portGen = portGen;
-        this.handler = handler;
         typeMapping = getShared().getMessageTypes();
         Selector selector = shared.getSelector();
         serverChannel = selector.provider().openServerSocketChannel();
@@ -98,8 +101,13 @@ public class SocketGossip {
     }
 
     public void processMessage(Message msg, SocketParty party) {
-        handler.accept(party, msg);
-//        getLedger().add(msg.getId(), System.currentTimeMillis(), msg)
+        if (handler == null) {
+            throw new IllegalStateException("not registered message handler");
+        }
+        handler.receive(party, msg);
+    }
 
+    public void broadcast(Message msg) {
+        throw new UnsupportedOperationException();
     }
 }

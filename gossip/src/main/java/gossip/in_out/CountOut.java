@@ -1,80 +1,86 @@
 package gossip.in_out;
 
+import lombok.Getter;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class CountOut implements Out<CountOut> {
-    private int size;
-
-    public CountOut() {
-        size = 0;
-    }
-
-    public int getSize() {
-        return size;
-    }
+public class CountOut implements java.io.DataOutput {
+    @Getter
+    private int count;
 
     public void reset() {
-        size = 0;
+        count = 0;
     }
 
     @Override
-    public CountOut put(byte b) {
-        size += Byte.BYTES;
-        return this;
+    public void write(int b) {
+        count++;
     }
 
     @Override
-    public CountOut put(ByteBuffer src) {
-        size += src.remaining();
-        return this;
+    public void write(byte[] src, int offset, int length) {
+        count += length;
     }
 
     @Override
-    public CountOut put(byte[] src, int offset, int length) {
-        size += length;
-        return this;
+    public void writeBoolean(boolean v) throws IOException {
+        count++;
     }
 
     @Override
-    public CountOut put(byte[] src) {
-        size += src.length;
-        return this;
+    public void writeByte(int v) throws IOException {
+        count++;
     }
 
     @Override
-    public CountOut putChar(char value) {
-        size += Character.BYTES;
-        return this;
+    public void write(byte[] src) {
+        count += src.length;
     }
 
     @Override
-    public CountOut putShort(short value) {
-        size += Short.BYTES;
-        return this;
+    public void writeChar(int value) {
+        count += 2;
     }
 
     @Override
-    public CountOut putInt(int value) {
-        size += Integer.BYTES;
-        return this;
+    public void writeShort(int value) {
+        count += 2;
     }
 
     @Override
-    public CountOut putLong(long value) {
-        size += Long.BYTES;
-        return this;
+    public void writeInt(int value) {
+        count += 4;
     }
 
     @Override
-    public CountOut putFloat(float value) {
-        size += Float.BYTES;
-        return this;
+    public void writeLong(long value) {
+        count += 8;
     }
 
     @Override
-    public CountOut putDouble(double value) {
-        size += Double.BYTES;
-        return this;
+    public void writeFloat(float value) {
+        count += 4;
+    }
+
+    @Override
+    public void writeDouble(double value) {
+        count += 8;
+    }
+
+    @Override
+    public void writeBytes(String s) throws IOException {
+        count += s.length();
+    }
+
+    @Override
+    public void writeChars(String s) throws IOException {
+        count += s.length() * 2;
+    }
+
+    @Override
+    public void writeUTF(String s) throws IOException {
+        throw new UnsupportedOperationException();
     }
 }
 

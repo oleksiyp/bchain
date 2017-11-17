@@ -6,6 +6,8 @@ import gossip.message.Message;
 import gossip.message.MessageType;
 import gossip.registry.RegistryMapping;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -28,11 +30,11 @@ public class SocketParty {
     private int skipInNextNBytes;
     private ByteBuffer inBuffer;
     private ByteBuffer deserializeBuf;
-    private In in;
+    private DataInput in;
 
     private ByteBuffer outBuffer;
+    private DataOutput out;
     private CountOut countOut;
-    private Out out;
 
 
     public SocketParty(SocketGossip gossip,
@@ -49,9 +51,10 @@ public class SocketParty {
         in = new BufIn(deserializeBuf);
 
         outBuffer = ByteBuffer.allocate(512);
-        countOut = new CountOut();
         out = new BufOut(outBuffer);
         ops = key.interestOps();
+
+        countOut = new CountOut();
     }
 
     public Message receive() throws IOException {
@@ -143,24 +146,28 @@ public class SocketParty {
     }
 
     public void send(Message msg) {
-        countOut.reset();
-        msg.serialize(countOut);
-        int requiredSpace = countOut.getSize() + Integer.BYTES * 2;
-        reallocateOut(requiredSpace);
+        try {
+            countOut.reset();
+            msg.serialize(countOut);
+            int requiredSpace = countOut.getCount() + Integer.BYTES * 2;
+            reallocateOut(requiredSpace);
 
-        int sizePos = outBuffer.position();
-        outBuffer.putInt(0);
-        int frameStart = outBuffer.position();
-        outBuffer.putInt(getGossip()
-                .getShared()
-                .getMessageTypes()
-                .tagByChoiceType(msg.getType()));
-        msg.serialize(out);
-        int frameEnd = outBuffer.position();
+            int sizePos = outBuffer.position();
+            outBuffer.putInt(0);
+            int frameStart = outBuffer.position();
+            outBuffer.putInt(getGossip()
+                    .getShared()
+                    .getMessageTypes()
+                    .tagByChoiceType(msg.getType()));
+            msg.serialize(out);
+            int frameEnd = outBuffer.position();
 
-        outBuffer.putInt(sizePos, frameEnd - frameStart);
+            outBuffer.putInt(sizePos, frameEnd - frameStart);
 
-        interested(ops | OP_WRITE);
+            interested(ops | OP_WRITE);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private void reallocateOut(int requiredSpace) {
